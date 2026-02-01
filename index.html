@@ -637,7 +637,7 @@
 
             document.getElementById('os-tag').innerText = os;
             const saved = localStorage.getItem('cc_host');
-            const def = os.includes("Win") ? "CyberChronos 14 Pro" : (os.includes("Android") ? "OnePlus 10 Pro" : "Secure Workstation");
+            const def = os.includes("Win") ? "Windows NT" : (os.includes("Android") ? "Android Device" : "Secure Workstation");
             document.getElementById('host-name').innerText = saved || def;
         }
 
