@@ -8,172 +8,205 @@ const firebaseConfig = {
     appId: "1:137141100080:web:1b798f2e7aa12a313cd7f5"
   };
 
-// --- 2. INITIALIZATION & SESSION ---
+// --- 2. INITIALIZATION ---
 let db, auth;
 let currentUser = null;
 let userDocRef = null;
-const sessionID = "SES-" + Math.floor(Math.random() * 1000000); // Unique Session ID
-
-// Dynamic Viewport Height for Mobile
-const setAppHeight = () => {
-    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
-};
-window.addEventListener('resize', setAppHeight);
-setAppHeight();
+let guestName = "Citizen-" + Math.floor(Math.random() * 9000 + 1000); // Генерация гостевого имени
 
 try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     auth = firebase.auth();
-    console.log("System: Link Established.");
+    console.log("System: Firebase Ready.");
 } catch (e) {
     console.error("Firebase Config Error:", e);
-    document.getElementById('net-stat').innerText = "CONFIG ERR";
-    document.getElementById('net-stat').style.color = "var(--danger)";
 }
 
-// --- 3. ADVANCED LOGGING SYSTEM ---
-// Sends structured logs to Firebase 'system_logs' collection
-function systemLog(type, message, details = {}) {
-    if (!db || !currentUser) return; // Can't log if not connected
+// --- 3. AUTH LOGIC (DYNAMIC) ---
 
-    const logEntry = {
-        session_id: sessionID,
-        uid: currentUser.uid,
-        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        type: type, // 'INFO', 'WARN', 'ERROR', 'CMD'
-        message: message,
-        device: {
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-            screen: `${window.screen.width}x${window.screen.height}`
-        },
-        ...details
-    };
-
-    // Fire and forget (don't await)
-    db.collection('system_logs').add(logEntry).catch(err => console.error("Log failed:", err));
-    
-    // Also show in local console
-    console.log(`[${type}] ${message}`, details);
-}
-
-// Global Error Trap
-window.onerror = function(msg, url, line) {
-    systemLog('ERROR', 'Global JS Error', { error: msg, location: `${url}:${line}` });
-    return false;
-};
-
-// --- 4. AUTHENTICATION LOGIC ---
-
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        currentUser = user;
-        document.getElementById('auth-modal').classList.remove('active');
-        document.getElementById('net-stat').innerText = "SECURE";
-        document.getElementById('net-stat').style.color = "var(--success)";
-        document.getElementById('header-uid').innerText = user.uid.substring(0,6).toUpperCase();
-        
-        loadUserProfile(user.uid);
-        updatePresence("ONLINE");
-        listenToNetwork();
-        
-        log(">> CONNECTION ESTABLISHED. WELCOME USER.", "var(--success)");
-        systemLog('INFO', 'User Logged In');
+// Функция для кнопки в меню (Вход / Выход)
+function handleAuthClick() {
+    if (currentUser) {
+        logout(); // Если вошли -> Выходим
     } else {
-        document.getElementById('auth-modal').classList.add('active');
-        currentUser = null;
-        log(">> CONNECTION LOST.", "var(--danger)");
+        toggleLoginModal(); // Если гости -> Открываем окно
     }
-});
+}
 
-document.getElementById('login-form').addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    const msg = document.getElementById('auth-msg');
+// Переключение видимости окна входа
+function toggleLoginModal() {
+    const modal = document.getElementById('auth-modal');
+    if (modal) modal.classList.toggle('active');
+}
 
-    msg.innerText = "Handshaking...";
-    msg.style.color = "var(--warning)";
+// СЛУШАТЕЛЬ СОСТОЯНИЯ (ГЛАВНАЯ МАГИЯ)
+if (auth) {
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // === ПОЛЬЗОВАТЕЛЬ ВОШЕЛ ===
+            currentUser = user;
+            console.log("Auth: Logged In as", user.uid);
+            
+            // 1. Закрываем окно
+            const modal = document.getElementById('auth-modal');
+            if(modal) modal.classList.remove('active');
 
-    auth.signInWithEmailAndPassword(email, pass)
-        .then(() => {
-            systemLog('INFO', 'Auth Successful');
-        })
-        .catch((error) => {
-            msg.innerText = "Error: " + error.message;
-            msg.style.color = "var(--danger)";
-            systemLog('WARN', 'Auth Failed', { error: error.message });
-        });
-});
+            // 2. Меняем интерфейс на "Боевой"
+            document.getElementById('authBtn').innerText = "DISCONNECT";
+            document.getElementById('authBtn').classList.add('logout-btn');
+            document.getElementById('net-stat').innerText = "SECURE";
+            document.getElementById('net-stat').style.color = "var(--success)";
+            document.getElementById('header-uid').innerText = user.uid.substring(0,6).toUpperCase();
+            document.getElementById('term-prompt').innerText = "root@cyberchronos:~#";
+            document.querySelector('.meta-tag').innerText = "ROOT";
 
+            // 3. Загружаем реальный профиль
+            loadUserProfile(user.uid);
+            updatePresence("ONLINE");
+            listenToNetwork();
+            
+            log(">> CONNECTION ESTABLISHED. WELCOME USER.", "var(--success)");
+
+        } else {
+            // === ПОЛЬЗОВАТЕЛЬ ВЫШЕЛ (ИЛИ ГОСТЬ) ===
+            currentUser = null;
+            userDocRef = null;
+            console.log("Auth: Guest Mode");
+
+            // 1. Возвращаем интерфейс к "Гостю"
+            document.getElementById('authBtn').innerText = "CONNECT LINK";
+            document.getElementById('authBtn').classList.remove('logout-btn');
+            document.getElementById('net-stat').innerText = "OPEN";
+            document.getElementById('net-stat').style.color = "var(--success)";
+            document.getElementById('header-uid').innerText = "GUEST";
+            document.getElementById('term-prompt').innerText = "guest@cyberchronos:~#";
+            document.querySelector('.meta-tag').innerText = "GUEST";
+
+            // 2. Ставим заглушку профиля
+            setProfileUI({
+                name: guestName,
+                role: 'guest',
+                avatar: `https://via.placeholder.com/100/000000/00f0ff?text=?`
+            });
+
+            // 3. Очищаем список пользователей
+            const grid = document.getElementById('users-grid');
+            if(grid) grid.innerHTML = '<div style="padding:10px; color:#666; font-size:0.8rem;">Login required to see global network.</div>';
+            document.getElementById('active-count').innerText = "0";
+
+            log(">> SYSTEM RESET. GUEST MODE ACTIVE.", "var(--warning)");
+        }
+    });
+}
+
+// Обработка формы входа
+const loginForm = document.getElementById('login-form');
+if (loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const pass = document.getElementById('password').value;
+        const msg = document.getElementById('auth-msg');
+
+        msg.innerText = "Handshaking...";
+        msg.style.color = "var(--warning)";
+
+        auth.signInWithEmailAndPassword(email, pass)
+            .catch((error) => {
+                msg.innerText = "Error: " + error.message;
+                msg.style.color = "var(--danger)";
+            });
+    });
+}
+
+// Выход
 function logout() {
     if(userDocRef) {
-        userDocRef.update({ status: "OFFLINE" }).then(() => {
-            systemLog('INFO', 'User Logout');
-            auth.signOut();
-        });
+        userDocRef.update({ status: "OFFLINE" }).then(() => auth.signOut());
     } else {
         auth.signOut();
     }
 }
 
-// --- 5. PROFILE LOGIC ---
+// --- 4. PROFILE LOGIC ---
 
 function loadUserProfile(uid) {
+    if(!db) return;
     userDocRef = db.collection('users').doc(uid);
+    
     userDocRef.onSnapshot((doc) => {
         if (doc.exists) {
-            renderSidebarProfile(doc.data());
+            setProfileUI(doc.data());
         } else {
-            createDefaultProfile(uid);
+            // Если профиля нет в БД, создаем
+            const defName = "Unit-" + Math.floor(Math.random()*9999);
+            db.collection('users').doc(uid).set({
+                uid: uid,
+                name: defName,
+                role: "user",
+                avatar: "https://via.placeholder.com/100/000000/00f0ff?text=" + defName.charAt(0),
+                status: "ONLINE",
+                device: getOS(),
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            });
         }
     });
 }
 
-function createDefaultProfile(uid) {
-    const defName = "Unit-" + Math.floor(Math.random()*9999);
-    const osInfo = getOS();
-    db.collection('users').doc(uid).set({
-        uid: uid,
-        name: defName,
-        role: "user",
-        avatar: "https://via.placeholder.com/100/000000/00f0ff?text=" + defName.charAt(0),
-        status: "ONLINE",
-        device: osInfo,
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    systemLog('INFO', 'Profile Created', { name: defName });
-}
-
-function renderSidebarProfile(data) {
-    document.getElementById('user-name').innerText = data.name || "Unknown";
-    document.getElementById('user-avatar').src = data.avatar || "https://via.placeholder.com/100";
+// Универсальная функция обновления UI профиля
+function setProfileUI(data) {
+    // Имя и Статус
+    const nameEl = document.getElementById('user-name');
+    const roleTextEl = document.getElementById('user-role-text');
+    const dashNameEl = document.getElementById('host-name');
     
+    if(nameEl) nameEl.innerText = data.name || "Unknown";
+    if(dashNameEl) dashNameEl.innerText = data.name || guestName;
+    
+    // Аватарка
+    const avatarEl = document.getElementById('user-avatar');
+    if(avatarEl) avatarEl.src = data.avatar || "https://via.placeholder.com/100";
+
+    // Роли и Цвета
     const ring = document.getElementById('user-role-ring');
     const badge = document.getElementById('user-role-badge');
-    const roleText = document.getElementById('user-role-text');
     
-    ring.className = "avatar-ring"; // Reset
+    if(ring) ring.className = "avatar-ring"; // Сброс
     
     if(data.role === 'admin') {
-        ring.classList.add('role-admin');
-        badge.innerText = "ADMIN";
-        badge.style.color = "var(--danger)";
-        badge.style.borderColor = "var(--danger)";
-        roleText.innerText = "Level 10 Access";
+        if(ring) ring.classList.add('role-admin');
+        if(badge) {
+            badge.innerText = "ADMIN";
+            badge.style.color = "var(--danger)";
+            badge.style.borderColor = "var(--danger)";
+        }
+        if(roleTextEl) roleTextEl.innerText = "Level 10 Access";
     } else if(data.role === 'vip') {
-        ring.classList.add('role-vip');
-        badge.innerText = "VIP";
-        badge.style.color = "var(--vip-gold)";
-        badge.style.borderColor = "var(--vip-gold)";
-        roleText.innerText = "Premium Link";
+        if(ring) ring.classList.add('role-vip');
+        if(badge) {
+            badge.innerText = "VIP";
+            badge.style.color = "var(--vip-gold)";
+            badge.style.borderColor = "var(--vip-gold)";
+        }
+        if(roleTextEl) roleTextEl.innerText = "Premium Link";
+    } else if(data.role === 'user') {
+        if(ring) ring.classList.add('role-user');
+        if(badge) {
+            badge.innerText = "OPERATOR";
+            badge.style.color = "var(--primary)";
+            badge.style.borderColor = "#333";
+        }
+        if(roleTextEl) roleTextEl.innerText = "Standard Access";
     } else {
-        ring.classList.add('role-user');
-        badge.innerText = "OPERATOR";
-        badge.style.color = "var(--primary)";
-        badge.style.borderColor = "#333";
-        roleText.innerText = "Standard Access";
+        // GUEST
+        if(ring) ring.classList.add('role-guest');
+        if(badge) {
+            badge.innerText = "CITIZEN";
+            badge.style.color = "#666";
+            badge.style.borderColor = "#333";
+        }
+        if(roleTextEl) roleTextEl.innerText = "Unregistered";
     }
 }
 
@@ -186,20 +219,24 @@ function updatePresence(status) {
     }
 }
 
-// Keep Alive
+// Keep Alive (только если вошли)
 setInterval(() => {
-    if(userDocRef) userDocRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
+    if(userDocRef && firebase) userDocRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
 }, 60000);
 
-// --- 6. NETWORK LISTENER ---
+// --- 5. NETWORK LISTENER ---
 
 function listenToNetwork() {
-    // Show only users online in last 5 min (logic handled by status usually, but for now exact match)
+    if(!db) return;
     db.collection('users').where('status', '==', 'ONLINE')
         .onSnapshot((snapshot) => {
             const grid = document.getElementById('users-grid');
+            if(!grid) return;
+            
             grid.innerHTML = '';
-            document.getElementById('active-count').innerText = snapshot.size;
+            
+            const activeCountEl = document.getElementById('active-count');
+            if(activeCountEl) activeCountEl.innerText = snapshot.size;
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
@@ -222,32 +259,28 @@ function listenToNetwork() {
         });
 }
 
-// --- 7. TERMINAL ENGINE ---
+// --- 6. TERMINAL ENGINE ---
 
 const cmdIn = document.getElementById('cmd-in');
 const termOut = document.getElementById('term-output');
 const termBox = document.getElementById('term-box');
-let activeProcessTimers = [];
 
-// Helper: Schedule log
-function scheduleLog(fn, delay) {
-    const id = setTimeout(() => {
-        fn();
-        activeProcessTimers = activeProcessTimers.filter(t => t !== id);
-    }, delay);
-    activeProcessTimers.push(id);
-}
-
-// Helper: Kill Process
-function killProcess() {
-    if(activeProcessTimers.length > 0) {
-        activeProcessTimers.forEach(clearTimeout);
-        activeProcessTimers = [];
-        log("^C", "var(--danger)");
-        systemLog('CMD', 'Process Killed');
-        return true;
+function log(txt, col="#aaa", isInput=false) {
+    if(!termOut) return;
+    const d = document.createElement('div');
+    d.className = 'term-row';
+    d.style.color = col;
+    
+    // Безопасное добавление текста
+    if(isInput) {
+        const prompt = currentUser ? "root@cyberchronos:~# " : "guest@cyberchronos:~# ";
+        d.innerHTML = `<span style="color:${currentUser?'#00ff9d':'#aaa'}">${prompt}</span> <span style="color:#fff">${txt}</span>`;
+    } else {
+        d.textContent = txt;
     }
-    return false;
+
+    termOut.appendChild(d);
+    if(termBox) termBox.scrollTop = termBox.scrollHeight;
 }
 
 function processCommand(raw) {
@@ -255,124 +288,57 @@ function processCommand(raw) {
     const cmd = parts[0].toLowerCase();
     const arg = parts.slice(1).join(' ');
 
-    // Log command execution
-    systemLog('CMD', `Executed: ${cmd}`, { args: arg });
+    if(cmd === 'login') {
+        toggleLoginModal();
+        return;
+    }
+
+    // Если гость пытается использовать крутые команды
+    const guestRestricted = ['netstat', 'encrypt', 'purge', 'setname'];
+    if(!currentUser && guestRestricted.includes(cmd)) {
+        log("Access Denied: Login required for this command.", "var(--danger)");
+        return;
+    }
 
     switch(cmd) {
         case 'help':
             log("COMMANDS:", "var(--primary)");
-            log("  status, whoami, clear, setname [name], logout");
-            log("  ls, sysinfo, netstat, encrypt, purge, date");
+            log("  login, clear, date, status, sysinfo");
+            if(currentUser) log("  setname [name], whoami, logout, netstat, encrypt, purge");
             break;
-        
-        case 'clear': termOut.innerHTML = ''; break;
-        
-        case 'status': 
-            log("[OK] KERNEL: ACTIVE");
-            log("[OK] DB LINK: ESTABLISHED");
-            break;
-
-        case 'ls':
-            log("Directory of /root/systems:", "var(--text-muted)");
-            log("  config.sys [ENCRYPTED]", "#fff");
-            log("  users.dat", "#fff");
-            log("  network.log", "#fff");
-            break;
-
-        case 'sysinfo':
-            log("HARDWARE PROFILE:");
-            log(`  HOST: ${document.getElementById('host-name').innerText}`);
-            log("  CORES: 8 LOGICAL / 4 PHYSICAL");
-            log("  ARCH: x64_vox_edition");
-            break;
-
-        case 'netstat':
-            log("Active Connections (TCP/IP):");
-            log("  PROTO  LOCAL ADDR      FOREIGN ADDR    STATE", "var(--text-muted)");
-            log("  TCP    127.0.0.1:443   10.0.0.5:8080   ESTABLISHED");
-            log("  TCP    192.168.1.5     104.22.1.1:443  TIME_WAIT");
-            break;
-
-        case 'encrypt':
-            log("Initializing AES-4096 handshake...", "var(--warning)");
-            scheduleLog(() => log(">> Generating keys...", "var(--text-muted)"), 500);
-            scheduleLog(() => log(">> Hashing data blocks...", "var(--text-muted)"), 1200);
-            scheduleLog(() => log(">> Verifying integrity...", "var(--text-muted)"), 2000);
-            scheduleLog(() => log(">> ENCRYPTION COMPLETE.", "var(--success)"), 2800);
-            break;
-
-        case 'purge':
-            log("Clearing buffer...", "var(--warning)");
-            scheduleLog(() => log(">> Flushing cache...", "var(--text-muted)"), 600);
-            scheduleLog(() => log(">> Releasing handles...", "var(--text-muted)"), 1200);
-            scheduleLog(() => log(">> Memory released: 512MB", "var(--success)"), 1800);
-            break;
-
+        case 'clear': if(termOut) termOut.innerHTML = ''; break;
+        case 'status': log("System Operational."); break;
+        case 'sysinfo': log(`Device: ${getOS()}`); break;
         case 'date': log(new Date().toString()); break;
-
+        
+        // Auth-only commands
         case 'logout': logout(); break;
-
-        case 'whoami': 
-            log(currentUser ? `UID: ${currentUser.uid}` : "Not logged in"); 
-            break;
-
+        case 'whoami': log(currentUser ? `UID: ${currentUser.uid}` : "Guest"); break;
         case 'setname':
             if(arg && userDocRef) {
                 userDocRef.update({ name: arg });
                 log(`Identity updated to: ${arg}`, "var(--success)");
-            } else {
-                log("Error: Name required or not logged in.", "var(--danger)");
-            }
+            } else log("Error: Name required.", "var(--danger)");
             break;
-
+        case 'encrypt': log("Simulating encryption... [DONE]", "var(--success)"); break;
+        
         default: log("Unknown command.", "var(--danger)");
     }
 }
 
-function log(txt, col="#aaa", isInput=false) {
-    const d = document.createElement('div');
-    d.className = 'term-row';
-    
-    let colorCode = col;
-    if(col.includes('primary')) colorCode = '#00f0ff';
-    if(col.includes('danger')) colorCode = '#ff3333';
-    if(col.includes('success')) colorCode = '#00ff9d';
-    if(col.includes('warning')) colorCode = '#ffcc00';
-    if(col.includes('text-muted')) colorCode = '#8b9bb4';
-
-    d.style.color = colorCode;
-    d.textContent = txt;
-
-    if(isInput) {
-        d.innerHTML = `<span style="color:#00ff9d; margin-right:10px">root@sys:~#</span> <span style="color:#fff">${txt}</span>`;
-    }
-
-    termOut.appendChild(d);
-    termBox.scrollTop = termBox.scrollHeight;
-}
-
-cmdIn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        const val = cmdIn.value.trim();
-        if(!val) return;
-        log(val, '#fff', true);
-        processCommand(val);
-        cmdIn.value = '';
-    }
-    if (e.ctrlKey && e.key === 'c') {
-        if(killProcess()) {
-            e.preventDefault();
-            log("^C", "var(--danger)");
+if(cmdIn) {
+    cmdIn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const val = cmdIn.value.trim();
+            if(!val) return;
+            log(val, '#fff', true);
+            processCommand(val);
             cmdIn.value = '';
         }
-    }
-    if (e.ctrlKey && e.key === 'l') {
-        e.preventDefault();
-        termOut.innerHTML = '';
-    }
-});
+    });
+}
 
-// --- 8. UTILS & INIT ---
+// --- 7. UTILS & INIT ---
 
 function getOS() {
     const ua = navigator.userAgent;
@@ -384,63 +350,54 @@ function getOS() {
     return "Unknown Terminal";
 }
 
-function initSys() {
-    const saved = localStorage.getItem('cc_host');
-    const os = getOS();
-    document.getElementById('host-name').innerText = saved || (os.includes("Win") ? "CyberChronos 14 Pro" : "OnePlus 10 Pro");
-}
-
-// Battery
+// Init Battery (with check)
 if ('getBattery' in navigator) {
     navigator.getBattery().then(b => {
-        document.getElementById('batt-val').innerText = Math.round(b.level * 100) + "%";
+        const el = document.getElementById('batt-val');
+        if(el) el.innerText = Math.round(b.level * 100) + "%";
     });
 }
-
-// Time
-setInterval(() => {
-    const now = new Date();
-    const h = String(now.getHours()).padStart(2,'0');
-    const m = String(now.getMinutes()).padStart(2,'0');
-    document.getElementById('uptime').innerText = `${h}:${m}`;
-}, 1000);
 
 // Visualizer
 const visContainer = document.getElementById('visualizer');
-for(let i=0; i<30; i++) {
-    let d = document.createElement('div');
-    d.className = 'bar';
-    d.style.flex = "1";
-    d.style.background = "var(--primary)";
-    d.style.opacity = "0.2";
-    d.style.transition = "height 0.2s, opacity 0.2s";
-    visContainer.appendChild(d);
+if(visContainer) {
+    for(let i=0; i<30; i++) {
+        let d = document.createElement('div');
+        d.className = 'bar';
+        d.style.flex = "1";
+        d.style.background = "var(--primary)";
+        d.style.opacity = "0.2";
+        d.style.transition = "height 0.2s, opacity 0.2s";
+        visContainer.appendChild(d);
+    }
+    setInterval(() => {
+        Array.from(visContainer.children).forEach(bar => {
+            const h = Math.floor(Math.random() * 80) + 10;
+            bar.style.height = h + "%";
+            bar.style.opacity = h > 70 ? "0.8" : "0.2";
+        });
+    }, 100);
 }
-setInterval(() => {
-    Array.from(visContainer.children).forEach(bar => {
-        const h = Math.floor(Math.random() * 80) + 10;
-        bar.style.height = h + "%";
-        bar.style.opacity = h > 70 ? "0.8" : "0.2";
-    });
-}, 100);
 
 // UI Toggles
 function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
+    const sb = document.getElementById('sidebar');
+    if(sb) sb.classList.toggle('open');
 }
+
 function switchTab(id, btn) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    btn.classList.add('active');
-    if(window.innerWidth <= 900) document.getElementById('sidebar').classList.remove('open');
-    if(id === 'term') setTimeout(() => cmdIn.focus(), 100);
+    
+    const panel = document.getElementById(id);
+    if(panel) panel.classList.add('active');
+    if(btn) btn.classList.add('active');
+    
+    if(window.innerWidth <= 900) {
+        const sb = document.getElementById('sidebar');
+        if(sb) sb.classList.remove('open');
+    }
 }
 
-// Init
-initSys();
-// Auto focus logic for desktop
-document.addEventListener('click', () => {
-    // Only focus if we are on desktop to avoid popping virtual keyboard on mobile
-    if(window.innerWidth > 900 && document.getElementById('term').classList.contains('active')) cmdIn.focus();
-});
+// Start with Guest UI
+setProfileUI({ name: guestName, role: 'guest' });
