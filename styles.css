@@ -242,3 +242,14 @@ h2 { border-bottom: 1px solid var(--border); padding-bottom: 15px; margin-bottom
     .desktop-only { display: none; }
     h2 { font-size: 1.2rem; }
 }
+
+/* Добавь это к стилям auth-box */
+.auth-btn-close {
+    width: 100%; padding: 10px; margin-top: 10px;
+    background: transparent; border: 1px solid #333; color: #666;
+    font-size: 0.8rem; cursor: pointer; transition: 0.2s;
+}
+.auth-btn-close:hover { border-color: var(--danger); color: var(--danger); }
+
+/* Стиль для гостя в кольце */
+.avatar-ring.role-guest { border-color: #333; box-shadow: none; border-style: dashed; }
