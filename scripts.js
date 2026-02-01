@@ -12,17 +12,16 @@ const firebaseConfig = {
 let db, auth;
 let currentUser = null;
 let userDocRef = null;
+let userRole = "guest"; // Local role tracker
 let guestName = "Citizen-" + Math.floor(Math.random() * 9000 + 1000); 
 
 // --- GENERATE AVATAR (NO INTERNET REQUIRED) ---
 function generateAvatar(text) {
-    // Рисуем SVG картинку: черный фон, неоновая буква
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
         <rect width="100" height="100" fill="#050505"/>
         <text x="50" y="55" font-family="monospace" font-size="50" font-weight="bold" fill="#00f0ff" text-anchor="middle" dominant-baseline="middle">${text}</text>
     </svg>`;
-    // Кодируем в формат, понятный браузеру
     return "data:image/svg+xml;base64," + btoa(svg);
 }
 
@@ -91,6 +90,7 @@ if (auth) {
             // === GUEST MODE ===
             currentUser = null;
             userDocRef = null;
+            userRole = "guest";
 
             const authBtn = document.getElementById('authBtn');
             if(authBtn) {
@@ -112,6 +112,12 @@ if (auth) {
                 role: 'guest',
                 avatar: `https://placehold.co/100/000000/00f0ff?text=?`
             });
+
+            // Close Admin Panel if open
+            const adminView = document.getElementById('admin-view');
+            if(adminView && adminView.style.display !== 'none') {
+                switchTab('dash');
+            }
 
             // Reset Grid
             const grid = document.getElementById('users-grid');
@@ -158,7 +164,9 @@ function loadUserProfile(uid) {
     userDocRef = db.collection('users').doc(uid);
     userDocRef.onSnapshot((doc) => {
         if (doc.exists) {
-            setProfileUI(doc.data());
+            const data = doc.data();
+            userRole = data.role || "user"; // Store role globally
+            setProfileUI(data);
         } else {
             createDefaultProfile(uid);
         }
@@ -167,14 +175,12 @@ function loadUserProfile(uid) {
 
 function createDefaultProfile(uid) {
     const defName = "Unit-" + Math.floor(Math.random()*9999);
-    // Берем первую букву имени (например "U")
     const letter = defName.charAt(0).toUpperCase(); 
     
     db.collection('users').doc(uid).set({
         uid: uid,
         name: defName,
         role: "user",
-        // ГЕНЕРАЦИЯ АВАТАРКИ:
         avatar: generateAvatar(letter), 
         status: "ONLINE",
         device: getOS(),
@@ -195,7 +201,6 @@ function setProfileUI(data) {
     if(nameEl) nameEl.innerText = displayName;
     if(dashNameEl) dashNameEl.innerText = displayName;
     
-    // ГЕНЕРАЦИЯ АВАТАРКИ ЕСЛИ ЕЁ НЕТ:
     if(avatarEl) {
         if (data.avatar && data.avatar.startsWith('data:')) {
             avatarEl.src = data.avatar;
@@ -261,7 +266,6 @@ function listenToNetwork() {
                 if(data.role === 'vip') roleClass = 'role-vip';
 
                 const safeName = data.name || "Unknown";
-                // ПРОВЕРКА И ГЕНЕРАЦИЯ:
                 let av = data.avatar;
                 if (!av || !av.startsWith('data:')) {
                     av = generateAvatar(safeName.charAt(0));
@@ -366,7 +370,7 @@ if(cmdIn) {
     });
 }
 
-// --- 7. UTILS ---
+// --- 7. UTILS & NAVIGATION ---
 
 function getOS() {
     const ua = navigator.userAgent;
@@ -384,7 +388,6 @@ if ('getBattery' in navigator) {
     });
 }
 
-// Visualizer (UPDATED: 800ms DELAY)
 const visContainer = document.getElementById('visualizer');
 if(visContainer) {
     for(let i=0; i<30; i++) {
@@ -393,12 +396,10 @@ if(visContainer) {
         d.style.flex = "1";
         d.style.background = "var(--primary)";
         d.style.opacity = "0.2";
-        // Smooth transition
         d.style.transition = "height 0.8s ease-in-out, opacity 0.8s";
         visContainer.appendChild(d);
     }
     
-    // Slow Update Loop (800ms)
     setInterval(() => {
         Array.from(visContainer.children).forEach(bar => {
             const h = Math.floor(Math.random() * 80) + 10;
@@ -413,14 +414,49 @@ function toggleSidebar() {
     if(sb) sb.classList.toggle('open');
 }
 
+// === UPDATED SWITCH TAB FUNCTION (ACCESS CONTROL) ===
 function switchTab(id, btn) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     
     const panel = document.getElementById(id);
     if(panel) panel.classList.add('active');
-    if(btn) btn.classList.add('active');
     
+    // Auto-select button if not passed (useful when calling from code)
+    if(btn) {
+        btn.classList.add('active');
+    } else {
+        // Try to find the button
+        const btns = document.querySelectorAll('.nav-btn');
+        if(id === 'dash') btns[0].classList.add('active');
+        if(id === 'control') btns[1].classList.add('active');
+        if(id === 'term') btns[2].classList.add('active');
+    }
+    
+    // --- ADMIN PANEL LOGIC ---
+    if(id === 'control') {
+        const adminView = document.getElementById('admin-view');
+        const lockedView = document.getElementById('locked-view');
+        const frame = document.getElementById('site-frame');
+
+        if(userRole === 'admin') {
+            // AUTHORIZED
+            lockedView.style.display = 'none';
+            adminView.style.display = 'flex';
+            
+            // Загружаем сайт только сейчас, чтобы не тратить ресурсы
+            // И чтобы не палиться раньше времени
+            if(frame && !frame.src) {
+                frame.src = "https://voxtek-site.vercel.app";
+            }
+        } else {
+            // DENIED
+            adminView.style.display = 'none';
+            lockedView.style.display = 'flex';
+            if(frame) frame.src = ""; // Clear src if unauthorized
+        }
+    }
+
     if(window.innerWidth <= 900) {
         const sb = document.getElementById('sidebar');
         if(sb) sb.classList.remove('open');
