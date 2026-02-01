@@ -12,87 +12,100 @@ const firebaseConfig = {
 let db, auth;
 let currentUser = null;
 let userDocRef = null;
-let guestName = "Citizen-" + Math.floor(Math.random() * 9000 + 1000); // Генерация гостевого имени
+let guestName = "Citizen-" + Math.floor(Math.random() * 9000 + 1000); 
+
+// Mobile Viewport Fix
+const setAppHeight = () => {
+    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+};
+window.addEventListener('resize', setAppHeight);
+setAppHeight();
 
 try {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
     auth = firebase.auth();
-    console.log("System: Firebase Ready.");
+    console.log("System: Firebase Initialized.");
 } catch (e) {
     console.error("Firebase Config Error:", e);
+    const el = document.getElementById('net-stat');
+    if(el) { el.innerText = "CONFIG ERR"; el.style.color = "var(--danger)"; }
 }
 
-// --- 3. AUTH LOGIC (DYNAMIC) ---
+// --- 3. DYNAMIC AUTH LOGIC ---
 
-// Функция для кнопки в меню (Вход / Выход)
 function handleAuthClick() {
     if (currentUser) {
-        logout(); // Если вошли -> Выходим
+        logout();
     } else {
-        toggleLoginModal(); // Если гости -> Открываем окно
+        toggleLoginModal();
     }
 }
 
-// Переключение видимости окна входа
 function toggleLoginModal() {
     const modal = document.getElementById('auth-modal');
     if (modal) modal.classList.toggle('active');
 }
 
-// СЛУШАТЕЛЬ СОСТОЯНИЯ (ГЛАВНАЯ МАГИЯ)
 if (auth) {
     auth.onAuthStateChanged((user) => {
         if (user) {
-            // === ПОЛЬЗОВАТЕЛЬ ВОШЕЛ ===
+            // === LOGGED IN ===
             currentUser = user;
-            console.log("Auth: Logged In as", user.uid);
             
-            // 1. Закрываем окно
-            const modal = document.getElementById('auth-modal');
-            if(modal) modal.classList.remove('active');
+            document.getElementById('auth-modal').classList.remove('active');
+            
+            const authBtn = document.getElementById('authBtn');
+            if(authBtn) {
+                authBtn.innerText = "DISCONNECT";
+                authBtn.classList.remove('auth-toggle-btn');
+                authBtn.classList.add('logout-btn');
+            }
 
-            // 2. Меняем интерфейс на "Боевой"
-            document.getElementById('authBtn').innerText = "DISCONNECT";
-            document.getElementById('authBtn').classList.add('logout-btn');
             document.getElementById('net-stat').innerText = "SECURE";
             document.getElementById('net-stat').style.color = "var(--success)";
             document.getElementById('header-uid').innerText = user.uid.substring(0,6).toUpperCase();
-            document.getElementById('term-prompt').innerText = "root@cyberchronos:~#";
-            document.querySelector('.meta-tag').innerText = "ROOT";
-
-            // 3. Загружаем реальный профиль
+            
+            const termPrompt = document.getElementById('term-prompt');
+            if(termPrompt) termPrompt.innerText = "root@cyberchronos:~#";
+            
             loadUserProfile(user.uid);
             updatePresence("ONLINE");
             listenToNetwork();
             
-            log(">> CONNECTION ESTABLISHED. WELCOME USER.", "var(--success)");
+            log(">> SECURE LINK ESTABLISHED. WELCOME USER.", "var(--success)");
 
         } else {
-            // === ПОЛЬЗОВАТЕЛЬ ВЫШЕЛ (ИЛИ ГОСТЬ) ===
+            // === GUEST MODE ===
             currentUser = null;
             userDocRef = null;
-            console.log("Auth: Guest Mode");
 
-            // 1. Возвращаем интерфейс к "Гостю"
-            document.getElementById('authBtn').innerText = "CONNECT LINK";
-            document.getElementById('authBtn').classList.remove('logout-btn');
+            const authBtn = document.getElementById('authBtn');
+            if(authBtn) {
+                authBtn.innerText = "CONNECT LINK";
+                authBtn.classList.remove('logout-btn');
+                authBtn.classList.add('auth-toggle-btn');
+            }
+
             document.getElementById('net-stat').innerText = "OPEN";
             document.getElementById('net-stat').style.color = "var(--success)";
             document.getElementById('header-uid').innerText = "GUEST";
-            document.getElementById('term-prompt').innerText = "guest@cyberchronos:~#";
-            document.querySelector('.meta-tag').innerText = "GUEST";
+            
+            const termPrompt = document.getElementById('term-prompt');
+            if(termPrompt) termPrompt.innerText = "guest@cyberchronos:~#";
 
-            // 2. Ставим заглушку профиля
+            // Reset Profile
             setProfileUI({
                 name: guestName,
                 role: 'guest',
-                avatar: `https://via.placeholder.com/100/000000/00f0ff?text=?`
+                avatar: `https://placehold.co/100/000000/00f0ff?text=?`
             });
 
-            // 3. Очищаем список пользователей
+            // Reset Grid
             const grid = document.getElementById('users-grid');
-            if(grid) grid.innerHTML = '<div style="padding:10px; color:#666; font-size:0.8rem;">Login required to see global network.</div>';
+            if(grid) {
+                grid.innerHTML = '<div style="padding:10px; color:#666; font-size:0.8rem; font-family:var(--font-code);">>> ACCESS DENIED. LOGIN REQUIRED TO VIEW GLOBAL NETWORK.</div>';
+            }
             document.getElementById('active-count').innerText = "0";
 
             log(">> SYSTEM RESET. GUEST MODE ACTIVE.", "var(--warning)");
@@ -100,27 +113,24 @@ if (auth) {
     });
 }
 
-// Обработка формы входа
+// Login Form
 const loginForm = document.getElementById('login-form');
-if (loginForm) {
+if(loginForm) {
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
         const email = document.getElementById('email').value;
         const pass = document.getElementById('password').value;
         const msg = document.getElementById('auth-msg');
 
-        msg.innerText = "Handshaking...";
-        msg.style.color = "var(--warning)";
+        if(msg) { msg.innerText = "Handshaking..."; msg.style.color = "var(--warning)"; }
 
         auth.signInWithEmailAndPassword(email, pass)
             .catch((error) => {
-                msg.innerText = "Error: " + error.message;
-                msg.style.color = "var(--danger)";
+                if(msg) { msg.innerText = "Error: " + error.message; msg.style.color = "var(--danger)"; }
             });
     });
 }
 
-// Выход
 function logout() {
     if(userDocRef) {
         userDocRef.update({ status: "OFFLINE" }).then(() => auth.signOut());
@@ -129,84 +139,64 @@ function logout() {
     }
 }
 
-// --- 4. PROFILE LOGIC ---
+// --- 4. PROFILE MANAGEMENT ---
 
 function loadUserProfile(uid) {
     if(!db) return;
     userDocRef = db.collection('users').doc(uid);
-    
     userDocRef.onSnapshot((doc) => {
         if (doc.exists) {
             setProfileUI(doc.data());
         } else {
-            // Если профиля нет в БД, создаем
-            const defName = "Unit-" + Math.floor(Math.random()*9999);
-            db.collection('users').doc(uid).set({
-                uid: uid,
-                name: defName,
-                role: "user",
-                avatar: "https://via.placeholder.com/100/000000/00f0ff?text=" + defName.charAt(0),
-                status: "ONLINE",
-                device: getOS(),
-                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            createDefaultProfile(uid);
         }
     });
 }
 
-// Универсальная функция обновления UI профиля
-function setProfileUI(data) {
-    // Имя и Статус
-    const nameEl = document.getElementById('user-name');
-    const roleTextEl = document.getElementById('user-role-text');
-    const dashNameEl = document.getElementById('host-name');
-    
-    if(nameEl) nameEl.innerText = data.name || "Unknown";
-    if(dashNameEl) dashNameEl.innerText = data.name || guestName;
-    
-    // Аватарка
-    const avatarEl = document.getElementById('user-avatar');
-    if(avatarEl) avatarEl.src = data.avatar || "https://via.placeholder.com/100";
+function createDefaultProfile(uid) {
+    const defName = "Unit-" + Math.floor(Math.random()*9999);
+    db.collection('users').doc(uid).set({
+        uid: uid,
+        name: defName,
+        role: "user",
+        avatar: "https://placehold.co/100/000000/00f0ff?text=" + defName.charAt(0),
+        status: "ONLINE",
+        device: getOS(),
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
 
-    // Роли и Цвета
+function setProfileUI(data) {
+    const nameEl = document.getElementById('user-name');
+    const dashNameEl = document.getElementById('host-name');
+    const roleTextEl = document.getElementById('user-role-text');
+    const avatarEl = document.getElementById('user-avatar');
     const ring = document.getElementById('user-role-ring');
     const badge = document.getElementById('user-role-badge');
-    
-    if(ring) ring.className = "avatar-ring"; // Сброс
-    
+
+    if(nameEl) nameEl.innerText = data.name || "Unknown";
+    if(dashNameEl) dashNameEl.innerText = data.name || guestName;
+    if(avatarEl) avatarEl.src = data.avatar || "https://placehold.co/100/000000/00f0ff?text=?";
+
+    if(ring) ring.className = "avatar-ring"; 
+
     if(data.role === 'admin') {
         if(ring) ring.classList.add('role-admin');
-        if(badge) {
-            badge.innerText = "ADMIN";
-            badge.style.color = "var(--danger)";
-            badge.style.borderColor = "var(--danger)";
-        }
+        if(badge) { badge.innerText = "ADMIN"; badge.style.color = "var(--danger)"; badge.style.borderColor = "var(--danger)"; }
         if(roleTextEl) roleTextEl.innerText = "Level 10 Access";
     } else if(data.role === 'vip') {
         if(ring) ring.classList.add('role-vip');
-        if(badge) {
-            badge.innerText = "VIP";
-            badge.style.color = "var(--vip-gold)";
-            badge.style.borderColor = "var(--vip-gold)";
-        }
+        if(badge) { badge.innerText = "VIP"; badge.style.color = "var(--vip-gold)"; badge.style.borderColor = "var(--vip-gold)"; }
         if(roleTextEl) roleTextEl.innerText = "Premium Link";
     } else if(data.role === 'user') {
         if(ring) ring.classList.add('role-user');
-        if(badge) {
-            badge.innerText = "OPERATOR";
-            badge.style.color = "var(--primary)";
-            badge.style.borderColor = "#333";
-        }
+        if(badge) { badge.innerText = "OPERATOR"; badge.style.color = "var(--primary)"; badge.style.borderColor = "#333"; }
         if(roleTextEl) roleTextEl.innerText = "Standard Access";
     } else {
         // GUEST
         if(ring) ring.classList.add('role-guest');
-        if(badge) {
-            badge.innerText = "CITIZEN";
-            badge.style.color = "#666";
-            badge.style.borderColor = "#333";
-        }
-        if(roleTextEl) roleTextEl.innerText = "Unregistered";
+        if(badge) { badge.innerText = "CITIZEN"; badge.style.color = "#666"; badge.style.borderColor = "#333"; }
+        if(roleTextEl) roleTextEl.innerText = "Unregistered Entity";
     }
 }
 
@@ -219,7 +209,6 @@ function updatePresence(status) {
     }
 }
 
-// Keep Alive (только если вошли)
 setInterval(() => {
     if(userDocRef && firebase) userDocRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
 }, 60000);
@@ -234,9 +223,8 @@ function listenToNetwork() {
             if(!grid) return;
             
             grid.innerHTML = '';
-            
-            const activeCountEl = document.getElementById('active-count');
-            if(activeCountEl) activeCountEl.innerText = snapshot.size;
+            const activeEl = document.getElementById('active-count');
+            if(activeEl) activeEl.innerText = snapshot.size;
 
             snapshot.forEach((doc) => {
                 const data = doc.data();
@@ -247,8 +235,10 @@ function listenToNetwork() {
                 if(data.role === 'admin') roleClass = 'role-admin';
                 if(data.role === 'vip') roleClass = 'role-vip';
 
+                const av = data.avatar || `https://placehold.co/40/000000/00f0ff?text=?`;
+
                 card.innerHTML = `
-                    <img src="${data.avatar || 'https://via.placeholder.com/40'}" class="node-avatar ${roleClass}">
+                    <img src="${av}" class="node-avatar ${roleClass}">
                     <div class="node-info">
                         <span class="node-name" style="${data.role==='admin'?'color:var(--danger)':''}">${data.name}</span>
                         <span class="node-status">● ONLINE [${data.device || 'Unknown'}]</span>
@@ -264,6 +254,15 @@ function listenToNetwork() {
 const cmdIn = document.getElementById('cmd-in');
 const termOut = document.getElementById('term-output');
 const termBox = document.getElementById('term-box');
+let activeProcessTimers = [];
+
+function scheduleLog(fn, delay) {
+    const id = setTimeout(() => {
+        fn();
+        activeProcessTimers = activeProcessTimers.filter(t => t !== id);
+    }, delay);
+    activeProcessTimers.push(id);
+}
 
 function log(txt, col="#aaa", isInput=false) {
     if(!termOut) return;
@@ -271,7 +270,6 @@ function log(txt, col="#aaa", isInput=false) {
     d.className = 'term-row';
     d.style.color = col;
     
-    // Безопасное добавление текста
     if(isInput) {
         const prompt = currentUser ? "root@cyberchronos:~# " : "guest@cyberchronos:~# ";
         d.innerHTML = `<span style="color:${currentUser?'#00ff9d':'#aaa'}">${prompt}</span> <span style="color:#fff">${txt}</span>`;
@@ -288,15 +286,11 @@ function processCommand(raw) {
     const cmd = parts[0].toLowerCase();
     const arg = parts.slice(1).join(' ');
 
-    if(cmd === 'login') {
-        toggleLoginModal();
-        return;
-    }
+    if(cmd === 'login') { toggleLoginModal(); return; }
 
-    // Если гость пытается использовать крутые команды
     const guestRestricted = ['netstat', 'encrypt', 'purge', 'setname'];
     if(!currentUser && guestRestricted.includes(cmd)) {
-        log("Access Denied: Login required for this command.", "var(--danger)");
+        log("Access Denied: Login required.", "var(--danger)");
         return;
     }
 
@@ -311,7 +305,6 @@ function processCommand(raw) {
         case 'sysinfo': log(`Device: ${getOS()}`); break;
         case 'date': log(new Date().toString()); break;
         
-        // Auth-only commands
         case 'logout': logout(); break;
         case 'whoami': log(currentUser ? `UID: ${currentUser.uid}` : "Guest"); break;
         case 'setname':
@@ -320,7 +313,12 @@ function processCommand(raw) {
                 log(`Identity updated to: ${arg}`, "var(--success)");
             } else log("Error: Name required.", "var(--danger)");
             break;
-        case 'encrypt': log("Simulating encryption... [DONE]", "var(--success)"); break;
+        case 'encrypt': 
+            log("Initializing encryption...", "var(--warning)");
+            scheduleLog(() => log(">> Generating keys...", "#aaa"), 500);
+            scheduleLog(() => log(">> Done.", "var(--success)"), 1200);
+            break;
+        case 'purge': log("Cache purged.", "var(--warning)"); break;
         
         default: log("Unknown command.", "var(--danger)");
     }
@@ -338,19 +336,17 @@ if(cmdIn) {
     });
 }
 
-// --- 7. UTILS & INIT ---
+// --- 7. UTILS ---
 
 function getOS() {
     const ua = navigator.userAgent;
-    if(ua.includes("Android")) return "Android System";
-    if(ua.includes("Win")) return "Windows NT";
+    if(ua.includes("Android")) return "Android";
+    if(ua.includes("Win")) return "Windows";
     if(ua.includes("Mac")) return "macOS";
-    if(ua.includes("Linux")) return "Linux";
     if(ua.includes("iPhone")) return "iOS";
-    return "Unknown Terminal";
+    return "Unknown";
 }
 
-// Init Battery (with check)
 if ('getBattery' in navigator) {
     navigator.getBattery().then(b => {
         const el = document.getElementById('batt-val');
@@ -358,7 +354,7 @@ if ('getBattery' in navigator) {
     });
 }
 
-// Visualizer
+// Visualizer (UPDATED: 800ms DELAY)
 const visContainer = document.getElementById('visualizer');
 if(visContainer) {
     for(let i=0; i<30; i++) {
@@ -367,19 +363,21 @@ if(visContainer) {
         d.style.flex = "1";
         d.style.background = "var(--primary)";
         d.style.opacity = "0.2";
-        d.style.transition = "height 0.2s, opacity 0.2s";
+        // Smooth transition
+        d.style.transition = "height 0.8s ease-in-out, opacity 0.8s";
         visContainer.appendChild(d);
     }
+    
+    // Slow Update Loop (800ms)
     setInterval(() => {
         Array.from(visContainer.children).forEach(bar => {
             const h = Math.floor(Math.random() * 80) + 10;
             bar.style.height = h + "%";
             bar.style.opacity = h > 70 ? "0.8" : "0.2";
         });
-    }, 100);
+    }, 800);
 }
 
-// UI Toggles
 function toggleSidebar() {
     const sb = document.getElementById('sidebar');
     if(sb) sb.classList.toggle('open');
@@ -399,5 +397,5 @@ function switchTab(id, btn) {
     }
 }
 
-// Start with Guest UI
+// START AS GUEST
 setProfileUI({ name: guestName, role: 'guest' });
