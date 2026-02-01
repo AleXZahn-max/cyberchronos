@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberChronos OS v14.0 [Desktop Environment] | VoxTek Systems</title>
+    <title>CyberChronos OS v14.1 [Smooth Maximize] | VoxTek Systems</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -30,6 +30,8 @@
             
             --font-code: 'Fira Code', monospace;
             --font-ui: 'Rajdhani', sans-serif;
+            
+            --taskbar-height: 45px;
         }
 
         /* =========================================
@@ -55,7 +57,7 @@
            3. DESKTOP AREA & ICONS
            ========================================= */
         #desktop {
-            width: 100%; height: calc(100vh - 45px); /* Minus taskbar */
+            width: 100%; height: calc(100vh - var(--taskbar-height));
             position: relative;
             padding: 20px;
             display: flex;
@@ -95,7 +97,7 @@
         }
 
         /* =========================================
-           4. WINDOW SYSTEM (The Kali/Win Style)
+           4. WINDOW SYSTEM (ANIMATIONS ADDED)
            ========================================= */
         .window {
             position: absolute;
@@ -107,14 +109,34 @@
             min-width: 300px; min-height: 200px;
             backdrop-filter: blur(10px);
             opacity: 0; transform: scale(0.95);
-            transition: opacity 0.2s, transform 0.2s;
             overflow: hidden;
             /* Resize Handle */
             resize: both; 
+            
+            /* SMOOTH ANIMATION MAGIC */
+            transition: 
+                width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                top 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+                opacity 0.2s, 
+                transform 0.2s,
+                border-radius 0.4s;
         }
 
         .window.open { opacity: 1; transform: scale(1); }
-        .window.minimized { display: none; }
+        .window.minimized { opacity: 0; transform: scale(0.8) translateY(200px); pointer-events: none; }
+        
+        /* MAXIMIZED STATE */
+        .window.maximized {
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: calc(100vh - var(--taskbar-height)) !important;
+            border-radius: 0 !important;
+            resize: none !important;
+            transform: none !important;
+        }
 
         .title-bar {
             height: 35px;
@@ -125,6 +147,9 @@
             padding: 0 10px;
             cursor: default;
         }
+        
+        /* Disable drag on title bar if maximized */
+        .window.maximized .title-bar { cursor: default; }
         
         .title-drag-area {
             flex: 1; height: 100%; display: flex; align-items: center;
@@ -142,7 +167,10 @@
         .win-btn.close { background: #ff5f56; }
         .win-btn.min { background: #ffbd2e; }
         .win-btn.max { background: #27c93f; }
-        .win-btn:hover { filter: brightness(1.2); }
+        
+        /* Hover effects for buttons */
+        .win-btn:hover { filter: brightness(1.2); transform: scale(1.1); }
+        .win-btn:active { filter: brightness(0.8); }
 
         .window-content {
             flex: 1; position: relative; overflow: hidden;
@@ -160,7 +188,7 @@
            5. TASKBAR (Windows 11 Style)
            ========================================= */
         #taskbar {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 45px;
+            position: fixed; bottom: 0; left: 0; width: 100%; height: var(--taskbar-height);
             background: var(--taskbar-bg);
             border-top: 1px solid rgba(255,255,255,0.1);
             display: flex; align-items: center; justify-content: space-between;
@@ -277,7 +305,7 @@
 
     <div id="start-menu">
         <div style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:5px; color:#fff; font-weight:bold;">
-            VOXTEK OS v14.0
+            VOXTEK OS v14.1
         </div>
         <div class="sm-item" onclick="wm.open('term')">Run Terminal</div>
         <div class="sm-item" onclick="wm.open('web')">Global Network</div>
@@ -290,13 +318,13 @@
             <div class="title-drag-area">root@CyberChronos:~</div>
             <div class="win-controls">
                 <button class="win-btn min" onclick="wm.minimize('win-term')"></button>
-                <button class="win-btn max"></button>
+                <button class="win-btn max" onclick="wm.toggleMaximize('win-term')"></button>
                 <button class="win-btn close" onclick="wm.close('win-term')"></button>
             </div>
         </div>
         <div class="window-content" onclick="document.getElementById('cmd-in').focus()">
             <div class="term-body" id="term-box">
-                <div class="term-row" style="color:var(--primary)">VoxTek OS v14.0 [Desktop Edition]</div>
+                <div class="term-row" style="color:var(--primary)">VoxTek OS v14.1 [Desktop Edition]</div>
                 <div class="term-row">System initialized. Type 'help' for commands.</div>
                 <div id="term-output"></div>
                 <div class="input-line">
@@ -312,12 +340,13 @@
             <div class="title-drag-area">VoxTek Global Network</div>
             <div class="win-controls">
                 <button class="win-btn min" onclick="wm.minimize('win-web')"></button>
-                <button class="win-btn max"></button>
+                <button class="win-btn max" onclick="wm.toggleMaximize('win-web')"></button>
                 <button class="win-btn close" onclick="wm.close('win-web')"></button>
             </div>
         </div>
         <div class="window-content">
-            <div class="iframe-shield"></div> <iframe id="vox-frame" class="full-frame" src="about:blank"></iframe>
+            <div class="iframe-shield"></div>
+            <iframe id="vox-frame" class="full-frame" src="about:blank"></iframe>
         </div>
     </div>
 
@@ -326,6 +355,7 @@
             <div class="title-drag-area">Hardware Monitor</div>
             <div class="win-controls">
                 <button class="win-btn min" onclick="wm.minimize('win-sys')"></button>
+                <button class="win-btn max" onclick="wm.toggleMaximize('win-sys')"></button>
                 <button class="win-btn close" onclick="wm.close('win-sys')"></button>
             </div>
         </div>
@@ -367,7 +397,7 @@
 
     <script>
         /* =========================================
-           1. WINDOW MANAGER (THE CORE)
+           1. WINDOW MANAGER
            ========================================= */
         const wm = {
             zIndex: 100,
@@ -375,7 +405,7 @@
                 'term': { id: 'win-term', title: 'Terminal', icon: '_>' },
                 'web':  { id: 'win-web', title: 'VoxNet', icon: '🌐' },
                 'sys':  { id: 'win-sys', title: 'System', icon: '⚡' },
-                'files': { id: null, title: 'Access Denied', icon: '🔒' } // Placeholder
+                'files': { id: null, title: 'Access Denied', icon: '🔒' }
             },
             
             open: function(key) {
@@ -389,40 +419,50 @@
                 
                 // Show Window
                 el.style.display = 'flex';
-                setTimeout(() => el.classList.add('open'), 10);
-                el.classList.remove('minimized');
+                // Small delay to allow CSS transitions to catch the display:block
+                setTimeout(() => {
+                    el.classList.add('open');
+                    el.classList.remove('minimized');
+                }, 10);
                 
                 this.bringToFront(el);
                 this.updateTaskbar();
 
-                // Special init for Web
                 if(key === 'web') loadExternalSite();
-                
-                // Hide Start Menu if open
                 document.getElementById('start-menu').classList.remove('show');
             },
 
             close: function(id) {
                 const el = document.getElementById(id);
                 el.classList.remove('open');
-                setTimeout(() => el.style.display = 'none', 200);
-                
-                // Find key by id to update taskbar properly would be better, 
-                // but for now we just refresh taskbar checks
-                setTimeout(() => this.updateTaskbar(), 250);
+                el.classList.remove('maximized'); // Reset state
+                setTimeout(() => el.style.display = 'none', 300); // Wait for transition
+                setTimeout(() => this.updateTaskbar(), 350);
             },
 
             minimize: function(id) {
                 const el = document.getElementById(id);
                 el.classList.remove('open');
+                el.classList.remove('maximized'); // Optional: reset max on minimize
                 el.classList.add('minimized');
                 this.updateTaskbar();
+            },
+
+            // NEW: Toggle Maximize with smooth transition
+            toggleMaximize: function(id) {
+                const el = document.getElementById(id);
+                this.bringToFront(el);
+                
+                if(el.classList.contains('maximized')) {
+                    el.classList.remove('maximized');
+                } else {
+                    el.classList.add('maximized');
+                }
             },
 
             bringToFront: function(el) {
                 this.zIndex++;
                 el.style.zIndex = this.zIndex;
-                // Highlight active tab
                 this.updateTaskbar();
             },
 
@@ -435,7 +475,6 @@
                     if(!winData.id) return;
                     
                     const el = document.getElementById(winData.id);
-                    // Check if displayed (block or flex) AND not none
                     if(el.style.display !== 'none' && el.style.display !== '') {
                         const tab = document.createElement('div');
                         tab.className = 'task-tab';
@@ -459,14 +498,19 @@
                 });
             },
 
-            // Drag Logic
             startDrag: function(e, id) {
                 const el = document.getElementById(id);
+                // Can't drag if maximized
+                if(el.classList.contains('maximized')) return;
+
                 this.bringToFront(el);
-                el.classList.add('dragging'); // Enables iframe shield
+                el.classList.add('dragging');
 
                 let shiftX = e.clientX - el.getBoundingClientRect().left;
                 let shiftY = e.clientY - el.getBoundingClientRect().top;
+
+                // Temporarily disable transition during drag for performance (optional, but smoother dragging)
+                el.style.transition = 'none';
 
                 function moveAt(pageX, pageY) {
                     el.style.left = pageX - shiftX + 'px';
@@ -481,14 +525,16 @@
 
                 document.onmouseup = function() {
                     document.removeEventListener('mousemove', onMouseMove);
-                    el.classList.remove('dragging'); // Disables iframe shield
+                    el.classList.remove('dragging');
+                    // Restore smooth transition
+                    el.style.transition = ''; 
                     document.onmouseup = null;
                 };
             }
         };
 
         /* =========================================
-           2. SYSTEM UTILITIES (Clock, Battery)
+           2. SYSTEM UTILITIES
            ========================================= */
         function updateClock() {
             const now = new Date();
@@ -502,7 +548,6 @@
             document.getElementById('start-menu').classList.toggle('show');
         }
 
-        // Close start menu if clicked on desktop
         document.getElementById('desktop').addEventListener('click', (e) => {
             if(e.target === document.getElementById('desktop')) {
                 document.getElementById('start-menu').classList.remove('show');
@@ -510,7 +555,7 @@
         });
 
         /* =========================================
-           3. TERMINAL LOGIC (Ported from v13)
+           3. TERMINAL LOGIC
            ========================================= */
         const cmdIn = document.getElementById('cmd-in');
         const termOut = document.getElementById('term-output');
@@ -518,7 +563,6 @@
         let cmdHistory = [];
         let historyIndex = -1;
 
-        // Auto-focus terminal on click
         termBox.addEventListener('click', () => cmdIn.focus());
 
         function log(txt, color="#ccc") {
@@ -543,7 +587,6 @@
             }
         });
 
-        // Basic Commands
         function processCommand(cmd) {
             const parts = cmd.split(' ');
             const c = parts[0].toLowerCase();
@@ -574,7 +617,7 @@
         }
 
         /* =========================================
-           4. FIREBASE & WEB SYNC (Hidden Backend)
+           4. FIREBASE & WEB SYNC
            ========================================= */
         const firebaseConfig = {
             apiKey: "AIzaSyDaYxxhxjrvjVgqYcvPH53989Wr5dMgqHI",
@@ -594,11 +637,9 @@
                 document.getElementById('net-icon').innerText = "● NET";
                 document.getElementById('net-icon').style.color = "var(--success)";
                 
-                // Identify Host
                 const savedName = localStorage.getItem('cc_host') || 'CyberChronos 14 Pro';
                 document.getElementById('host-name').innerText = savedName;
 
-                // Sync Presence
                 db.collection('users').doc(user.user.uid).set({
                     name: savedName,
                     status: 'ONLINE',
@@ -622,7 +663,6 @@
             iframeLoaded = true;
         }
 
-        // Listener for V-Sync
         window.addEventListener('message', (event) => {
             if (event.origin !== "https://voxtek-site.vercel.app") return;
             if (event.data.type === 'PONG') {
@@ -630,7 +670,6 @@
             }
         });
 
-        // Boot Visuals
         updateClock();
         
     </script>
