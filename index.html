@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>CyberChronos OS v17.0 [Public Access]</title>
+    <meta name="theme-color" content="#020202">
+    <title>CyberChronos OS v18.0 [Grandmaster]</title>
     
     <link rel="stylesheet" href="styles.css">
     
@@ -19,14 +20,14 @@
         <div class="auth-box">
             <div class="auth-header">
                 <h3>VOXTEK IDENTITY</h3>
-                <p>Enter Secure Credentials</p>
+                <p>Secure Link Required</p>
             </div>
             <form id="login-form">
                 <input type="email" id="email" placeholder="CODENAME (EMAIL)" required class="auth-input">
                 <input type="password" id="password" placeholder="ACCESS KEY (PASSWORD)" required class="auth-input">
                 <button type="submit" class="auth-btn">ESTABLISH LINK</button>
             </form>
-            <button class="auth-btn-close" onclick="toggleLoginModal()">CANCEL</button>
+            <button class="auth-btn-close" onclick="toggleLoginModal()">CANCEL CONNECTION</button>
             <div class="auth-footer" id="auth-msg">Standby...</div>
         </div>
     </div>
@@ -34,7 +35,7 @@
     <nav class="top-nav">
         <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu" id="menuBtn">☰</button>
         <div class="top-status">
-            UID: <span id="header-uid" style="color:var(--primary)">GUEST</span> | 
+            <span class="desktop-only">UID: <span id="header-uid" style="color:var(--primary)">GUEST</span> | </span>
             NET: <span id="net-stat" style="color:var(--success)">OPEN</span>
         </div>
     </nav>
@@ -42,13 +43,13 @@
     <aside class="sidebar" id="sidebar">
         <div class="brand">
             <h1>CyberChronos</h1>
-            <span>SYSTEM v17.0</span>
+            <span>SYSTEM v18.0</span>
         </div>
 
         <div class="user-profile-widget">
             <div class="avatar-wrapper">
                 <div class="avatar-ring role-guest" id="user-role-ring">
-                    <img id="user-avatar" src="https://via.placeholder.com/100/000000/00f0ff?text=?" alt="Avatar">
+                    <img id="user-avatar" src="https://placehold.co/100/000000/00f0ff?text=?" alt="Avatar">
                 </div>
                 <div class="role-badge" id="user-role-badge">CITIZEN</div>
             </div>
@@ -76,12 +77,12 @@
                 <div class="card">
                     <div class="card-label">Identity</div>
                     <div class="card-value" id="host-name">Guest Node</div>
-                    <div class="card-sub" style="color: var(--warning);">LOCAL ONLY</div>
+                    <div class="card-sub" style="color: var(--warning);">LOCAL ACCESS ONLY</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Active Nodes</div>
+                    <div class="card-label">Global Nodes</div>
                     <div class="card-value" id="active-count">0</div>
-                    <div class="card-sub">GLOBAL NETWORK</div>
+                    <div class="card-sub">VOXTEK NETWORK</div>
                 </div>
                 <div class="card">
                     <div class="card-label">Power Core</div>
@@ -93,12 +94,53 @@
             <div class="users-section">
                 <div class="users-header">Active Neural Links [LIVE]</div>
                 <div class="users-grid" id="users-grid">
-                    <div style="padding:10px; color:#666; font-size:0.8rem;">Login required to see global network.</div>
+                    <div style="padding:10px; color:#666; font-size:0.8rem; font-family:var(--font-code);">
+                        >> ACCESS DENIED. LOGIN REQUIRED TO VIEW GLOBAL NETWORK.
+                    </div>
                 </div>
             </div>
 
+            <div class="info-section">
+                <div class="text-panel">
+                    <h3>:: CyberChronos Technologies</h3>
+                    <p>
+                        Founded as a strategic division of <strong>VoxTek Enterprises</strong>, CyberChronos is dedicated to the development of zero-latency operating environments. 
+                        Our kernel architecture eliminates the delay between user intent and digital execution.
+                    </p>
+                    <p>
+                        Version 18.0 utilizes the advanced <em>"Neuro-Sync"</em> protocol, allowing seamless integration with bio-digital implants and high-frequency surveillance grids. 
+                        Trust in stability. Trust in VoxTek.
+                    </p>
+                    <div style="font-family: var(--font-code); font-size: 0.75rem; color: var(--primary); margin-top: 10px;">
+                        >> STATUS: MARKET DOMINANCE ACHIEVED
+                    </div>
+                </div>
+
+                <div class="text-panel" style="border-left-color: var(--success);">
+                    <h3>:: Core Modules</h3>
+                    <div class="feature-list">
+                        <div class="f-item">
+                            <span>Vox-Encryption Standard (AES-4096)</span>
+                            <span class="f-tag">ACTIVE</span>
+                        </div>
+                        <div class="f-item">
+                            <span>Neuro-Sync Kernel v18.0</span>
+                            <span class="f-tag">ACTIVE</span>
+                        </div>
+                        <div class="f-item">
+                            <span>Global Surveillance Uplink</span>
+                            <span class="f-tag">STANDBY</span>
+                        </div>
+                        <div class="f-item">
+                            <span>Ad-Revenue Optimization</span>
+                            <span class="f-tag">MAXIMIZED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="net-monitor">
-                <div class="card-label">Data Stream</div>
+                <div class="card-label">Encrypted Data Stream</div>
                 <div class="bars-container" id="visualizer"></div>
             </div>
         </section>
@@ -107,18 +149,20 @@
             <h2>Command Interface <span class="meta-tag">GUEST</span></h2>
             <div class="term-wrapper">
                 <div class="term-header">
-                    <div class="term-dot red"></div><div class="term-dot yellow"></div><div class="term-dot green"></div>
-                    <span style="margin-left:auto; color:#666">bash — public</span>
+                    <div class="term-dot red"></div>
+                    <div class="term-dot yellow"></div>
+                    <div class="term-dot green"></div>
+                    <span style="margin-left:auto; color:#666">bash — public_access</span>
                 </div>
                 <div class="terminal-box" id="term-box" role="log" aria-live="polite">
-                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v17.0</div>
+                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v18.0 [Public]</div>
                     <div class="term-row">Login as: Guest (Citizen)</div>
-                    <div class="term-row">Restricted Access. Type 'help'.</div>
+                    <div class="term-row">Type 'help' to see available commands.</div>
                     <br>
                     <div id="term-output"></div>
                     <div class="input-row">
                         <span class="prompt" id="term-prompt">guest@cyberchronos:~#</span>
-                        <input type="search" class="cmd-input" id="cmd-in" autocomplete="off" enterkeyhint="go">
+                        <input type="search" class="cmd-input" id="cmd-in" autocomplete="off" spellcheck="false" enterkeyhint="go">
                     </div>
                 </div>
             </div>
