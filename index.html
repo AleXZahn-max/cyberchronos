@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberChronos OS v15.0 [Ultimate] | VoxTek Systems</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#020202">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>CyberChronos OS v16.0 [Mobile Core]</title>
     
     <link rel="stylesheet" href="styles.css">
     
@@ -26,14 +28,14 @@
                 <input type="password" id="password" placeholder="ACCESS KEY (PASSWORD)" required class="auth-input">
                 <button type="submit" class="auth-btn">INITIALIZE LINK</button>
             </form>
-            <div class="auth-footer" id="auth-msg">Waiting for input...</div>
+            <div class="auth-footer" id="auth-msg">System Ready...</div>
         </div>
     </div>
 
     <nav class="top-nav">
         <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu" id="menuBtn">☰</button>
         <div class="top-status">
-            UID: <span id="header-uid" style="color:var(--primary)">---</span> | 
+            <span class="desktop-only">UID: <span id="header-uid" style="color:var(--primary)">---</span> | </span>
             NET: <span id="net-stat" style="color:var(--warning)">SYNCING</span>
         </div>
     </nav>
@@ -41,7 +43,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="brand">
             <h1>CyberChronos</h1>
-            <span>SYSTEM v15.0</span>
+            <span>SYSTEM v16.0</span>
         </div>
 
         <div class="user-profile-widget">
@@ -73,9 +75,9 @@
 
             <div class="grid-layout">
                 <div class="card">
-                    <div class="card-label">Machine ID</div>
+                    <div class="card-label">Device ID</div>
                     <div class="card-value" id="host-name">Unknown</div>
-                    <div class="card-sub" style="color: var(--success);">ENCRYPTED</div>
+                    <div class="card-sub" style="color: var(--success);">SECURE CONNECTION</div>
                 </div>
                 <div class="card">
                     <div class="card-label">Global Nodes</div>
@@ -83,7 +85,7 @@
                     <div class="card-sub">VOXTEK NETWORK</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Power Core</div>
+                    <div class="card-label">Battery Level</div>
                     <div class="card-value" id="batt-val">--%</div>
                     <div class="card-sub" id="batt-status">Scanning...</div>
                 </div>
@@ -105,11 +107,9 @@
                     </p>
                 </div>
                 <div class="text-panel" style="border-left-color: var(--success);">
-                    <h3>:: Active Modules</h3>
-                    <div class="feature-list">
-                        <div class="f-item"><span>Neuro-Sync Kernel</span><span class="f-tag">ACTIVE</span></div>
-                        <div class="f-item"><span>Vox-Encryption (AES)</span><span class="f-tag">SECURE</span></div>
-                        <div class="f-item"><span>Global Surveillance</span><span class="f-tag">STANDBY</span></div>
+                    <h3>:: System Logs</h3>
+                    <div class="feature-list" id="mini-log-view">
+                        <div class="f-item"><span>System Boot...</span><span class="f-tag">OK</span></div>
                     </div>
                 </div>
             </div>
@@ -127,16 +127,17 @@
                     <div class="term-dot red"></div>
                     <div class="term-dot yellow"></div>
                     <div class="term-dot green"></div>
-                    <span style="margin-left:auto; color:#666">bash — secure_shell</span>
+                    <span style="margin-left:auto; color:#666">bash — mobile_optimized</span>
                 </div>
-                <div class="terminal-box" id="term-box">
-                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v15.0 [Connected]</div>
+                <div class="terminal-box" id="term-box" role="log" aria-live="polite">
+                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v16.0 [Mobile Core]</div>
+                    <div class="term-row">Advanced Logging: ENABLED</div>
                     <div class="term-row">Type 'help' to see commands.</div>
                     <br>
                     <div id="term-output"></div>
                     <div class="input-row">
                         <span class="prompt">root@cyberchronos:~#</span>
-                        <input type="text" class="cmd-input" id="cmd-in" autocomplete="off" spellcheck="false">
+                        <input type="search" class="cmd-input" id="cmd-in" autocomplete="off" spellcheck="false" enterkeyhint="go">
                     </div>
                 </div>
             </div>
