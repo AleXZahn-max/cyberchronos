@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberChronos OS v14.1 [Smooth Maximize] | VoxTek Systems</title>
+    <title>CyberChronos OS v15.0 [Hyper-Terminal] | VoxTek Systems</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -14,6 +14,7 @@
            1. CORE VARIABLES & FONTS
            ========================================= */
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&family=Rajdhani:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap'); /* Retro Terminal Font */
 
         :root {
             --primary: #00f0ff;
@@ -29,6 +30,7 @@
             --success: #00ff9d;
             
             --font-code: 'Fira Code', monospace;
+            --font-term: 'VT323', monospace; /* New Retro Font */
             --font-ui: 'Rajdhani', sans-serif;
             
             --taskbar-height: 45px;
@@ -82,6 +84,7 @@
         .desktop-icon:hover {
             background: rgba(255, 255, 255, 0.05);
             border-color: rgba(255, 255, 255, 0.1);
+            text-shadow: 0 0 8px var(--primary);
         }
         
         .desktop-icon:active { background: var(--primary-dim); }
@@ -90,94 +93,73 @@
             font-size: 2.5rem; margin-bottom: 5px;
             filter: drop-shadow(0 0 5px rgba(0,240,255,0.5));
         }
-        
-        .d-icon-label {
-            font-size: 0.8rem; font-weight: 500;
-            text-shadow: 0 1px 3px #000;
-        }
+        .d-icon-label { font-size: 0.8rem; font-weight: 500; text-shadow: 0 1px 3px #000; }
 
         /* =========================================
-           4. WINDOW SYSTEM (ANIMATIONS ADDED)
+           4. WINDOW SYSTEM
            ========================================= */
         .window {
             position: absolute;
             background: var(--window-bg);
             border: 1px solid var(--border);
-            border-radius: 8px 8px 0 0;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            border-radius: 6px 6px 0 0;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.9), 0 0 10px rgba(0,240,255,0.1);
             display: flex; flex-direction: column;
             min-width: 300px; min-height: 200px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             opacity: 0; transform: scale(0.95);
             overflow: hidden;
-            /* Resize Handle */
             resize: both; 
-            
-            /* SMOOTH ANIMATION MAGIC */
             transition: 
-                width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-                height 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-                top 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-                left 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
-                opacity 0.2s, 
-                transform 0.2s,
-                border-radius 0.4s;
+                width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                height 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1),
+                opacity 0.2s, transform 0.2s;
         }
 
         .window.open { opacity: 1; transform: scale(1); }
         .window.minimized { opacity: 0; transform: scale(0.8) translateY(200px); pointer-events: none; }
         
-        /* MAXIMIZED STATE */
         .window.maximized {
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: calc(100vh - var(--taskbar-height)) !important;
-            border-radius: 0 !important;
-            resize: none !important;
-            transform: none !important;
+            top: 0 !important; left: 0 !important;
+            width: 100% !important; height: calc(100vh - var(--taskbar-height)) !important;
+            border-radius: 0 !important; resize: none !important; transform: none !important;
         }
 
         .title-bar {
-            height: 35px;
-            background: linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(10,20,30,0.8) 100%);
+            height: 32px;
+            background: linear-gradient(90deg, rgba(5,10,15,0.95) 0%, rgba(20,30,40,0.9) 100%);
             border-bottom: 1px solid var(--border);
-            display: flex; align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            cursor: default;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 10px; cursor: default;
         }
         
-        /* Disable drag on title bar if maximized */
         .window.maximized .title-bar { cursor: default; }
         
         .title-drag-area {
             flex: 1; height: 100%; display: flex; align-items: center;
-            font-family: var(--font-ui); font-size: 0.9rem; letter-spacing: 1px;
+            font-family: var(--font-ui); font-size: 0.85rem; letter-spacing: 2px;
             text-transform: uppercase; color: var(--text-muted);
             user-select: none;
         }
-        .title-drag-area:hover { color: #fff; }
 
         .win-controls { display: flex; gap: 8px; }
         .win-btn {
-            width: 12px; height: 12px; border-radius: 50%;
-            border: none; cursor: pointer; transition: 0.2s;
+            width: 11px; height: 11px; border-radius: 50%;
+            border: none; cursor: pointer; transition: 0.2s; position: relative;
         }
-        .win-btn.close { background: #ff5f56; }
-        .win-btn.min { background: #ffbd2e; }
-        .win-btn.max { background: #27c93f; }
-        
-        /* Hover effects for buttons */
-        .win-btn:hover { filter: brightness(1.2); transform: scale(1.1); }
-        .win-btn:active { filter: brightness(0.8); }
+        .win-btn.close { background: #ff4757; }
+        .win-btn.min { background: #ffa502; }
+        .win-btn.max { background: #2ed573; }
+        .win-btn:hover { transform: scale(1.2); filter: brightness(1.2); }
 
         .window-content {
             flex: 1; position: relative; overflow: hidden;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.8);
         }
 
-        /* Iframe Fix for Dragging */
+        /* Shield for dragging over iframes */
         .iframe-shield {
             position: absolute; top:0; left:0; width:100%; height:100%;
             display: none; z-index: 50;
@@ -185,23 +167,99 @@
         .window.dragging .iframe-shield { display: block; }
 
         /* =========================================
-           5. TASKBAR (Windows 11 Style)
+           5. RADICALLY IMPROVED TERMINAL (CRT STYLE)
+           ========================================= */
+        /* Container for CRT effects */
+        .term-crt-container {
+            width: 100%; height: 100%;
+            background-color: #050505;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Scanline Overlay */
+        .scanlines {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            pointer-events: none; z-index: 5;
+        }
+
+        /* Slight Flicker Animation */
+        @keyframes flicker {
+            0% { opacity: 0.97; } 5% { opacity: 0.95; } 10% { opacity: 0.9; } 15% { opacity: 0.95; } 20% { opacity: 0.99; }
+            50% { opacity: 0.95; } 80% { opacity: 0.9; } 100% { opacity: 0.97; }
+        }
+
+        /* Glow & Text */
+        .term-body {
+            width: 100%; height: 100%;
+            padding: 15px; overflow-y: auto;
+            font-family: var(--font-term); /* Retro Font */
+            font-size: 1.1rem;
+            color: var(--primary);
+            text-shadow: 0 0 4px var(--primary-glow);
+            animation: flicker 0.15s infinite;
+        }
+        
+        /* Custom Scrollbar for Terminal */
+        .term-body::-webkit-scrollbar { width: 10px; background: #000; }
+        .term-body::-webkit-scrollbar-thumb { background: var(--primary); border: 2px solid #000; }
+
+        .term-row { 
+            margin-bottom: 2px; line-height: 1.2; 
+            white-space: pre-wrap; word-wrap: break-word; 
+        }
+
+        .input-line { 
+            display: flex; margin-top: 10px; 
+            color: #fff; text-shadow: 0 0 4px #fff;
+        }
+
+        .cmd-input { 
+            background: transparent; border: none; color: #fff; flex: 1; 
+            font-family: var(--font-term); font-size: 1.1rem; margin-left: 10px;
+            caret-color: var(--primary); text-shadow: 0 0 4px #fff;
+            text-transform: none;
+        }
+
+        /* Blinking Cursor Block for retro feel */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .cursor-block {
+            display: inline-block; width: 8px; height: 15px; 
+            background: var(--primary); animation: blink 1s infinite;
+            vertical-align: middle; margin-left: 5px;
+        }
+
+        /* =========================================
+           6. TASKBAR & START MENU
            ========================================= */
         #taskbar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: var(--taskbar-height);
             background: var(--taskbar-bg);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255,255,255,0.15);
             display: flex; align-items: center; justify-content: space-between;
             padding: 0 15px; z-index: 9999;
             backdrop-filter: blur(10px);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
         }
 
         .start-btn {
             font-size: 1.5rem; color: var(--primary); cursor: pointer;
-            margin-right: 15px; transition: 0.3s;
+            margin-right: 15px; transition: 0.3s; width: 35px; height: 35px;
             display: flex; align-items: center; justify-content: center;
+            border-radius: 4px;
         }
-        .start-btn:hover { text-shadow: 0 0 10px var(--primary); transform: scale(1.1); }
+        .start-btn:hover { 
+            background: var(--primary-dim); 
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
 
         .task-list {
             flex: 1; display: flex; gap: 5px; height: 100%; align-items: center;
@@ -209,19 +267,19 @@
         }
 
         .task-tab {
-            height: 35px; padding: 0 15px;
-            background: rgba(255,255,255,0.05);
+            height: 35px; padding: 0 15px; min-width: 140px;
+            background: rgba(255,255,255,0.03);
             border-bottom: 2px solid transparent;
             color: var(--text-muted);
             display: flex; align-items: center; gap: 8px;
             font-size: 0.85rem; cursor: pointer;
             transition: 0.2s; border-radius: 4px;
         }
-        .task-tab:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .task-tab:hover { background: rgba(255,255,255,0.08); color: #fff; }
         .task-tab.active { 
-            background: rgba(0, 240, 255, 0.1); 
+            background: rgba(0, 240, 255, 0.08); 
             border-bottom: 2px solid var(--primary); 
-            color: var(--primary);
+            color: var(--primary); text-shadow: 0 0 5px var(--primary-glow);
         }
 
         .sys-tray {
@@ -229,93 +287,84 @@
             font-size: 0.8rem; font-family: var(--font-code); color: #fff;
         }
 
-        /* =========================================
-           6. CONTENT STYLES (Terminal & Status)
-           ========================================= */
-        /* Terminal Specifics */
-        .term-body {
-            width: 100%; height: 100%; background: #0c0c0c;
-            padding: 10px; overflow-y: auto; font-family: var(--font-code);
-            font-size: 0.9rem; color: #ccc;
+        /* Start Menu */
+        #start-menu {
+            position: absolute; bottom: 55px; left: 10px;
+            width: 260px; background: rgba(10,15,22,0.98);
+            border: 1px solid var(--border);
+            padding: 5px; display: none; flex-direction: column; gap: 2px;
+            z-index: 10000; box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border-radius: 6px;
         }
-        .term-row { margin-bottom: 4px; line-height: 1.4; word-wrap: break-word; }
-        .input-line { display: flex; margin-top: 10px; color: #fff; }
-        .cmd-input { 
-            background: transparent; border: none; color: #fff; flex: 1; 
-            font-family: var(--font-code); font-size: 0.9rem; margin-left: 10px;
+        #start-menu.show { display: flex; animation: slideUp 0.2s ease-out; }
+        
+        .sm-header {
+            padding: 12px 15px; background: linear-gradient(90deg, var(--primary-dim), transparent);
+            border-bottom: 1px solid #333; margin-bottom: 5px;
+            color: #fff; font-weight: bold; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 10px;
         }
+        .sm-item {
+            padding: 12px 15px; cursor: pointer; color: #ccc; transition: 0.2s;
+            display: flex; align-items: center; gap: 12px; border-radius: 4px;
+            font-family: var(--font-ui); font-size: 0.9rem;
+        }
+        .sm-item:hover { background: var(--primary); color: #000; font-weight: bold; }
 
-        /* Status Grid */
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Status Grid Styles */
         .status-grid { 
             display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 20px; 
             color: #fff; height: 100%; overflow-y: auto;
         }
         .stat-card {
-            background: rgba(255,255,255,0.05); border: 1px solid #333;
-            padding: 15px; display: flex; flex-direction: column;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; display: flex; flex-direction: column; transition: 0.3s;
         }
-        .stat-val { font-size: 1.5rem; color: var(--primary); font-family: var(--font-code); }
-        .stat-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; }
+        .stat-card:hover { border-color: var(--primary); box-shadow: 0 0 15px rgba(0,240,255,0.1); }
+        .stat-val { font-size: 1.5rem; color: var(--primary); font-family: var(--font-code); text-shadow: 0 0 5px var(--primary-glow); }
+        .stat-lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Browser Frame */
         iframe.full-frame { width: 100%; height: 100%; border: none; background: #fff; }
-
-        /* Start Menu (Simple) */
-        #start-menu {
-            position: absolute; bottom: 50px; left: 10px;
-            width: 250px; background: rgba(10,15,20,0.98);
-            border: 1px solid var(--border);
-            padding: 15px; display: none; flex-direction: column; gap: 10px;
-            z-index: 10000; box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        #start-menu.show { display: flex; }
-        .sm-item {
-            padding: 10px; cursor: pointer; color: #ccc; transition: 0.2s;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .sm-item:hover { background: var(--primary-dim); color: #fff; }
-        
     </style>
 </head>
 <body>
 
     <div id="desktop">
-        
         <div class="desktop-icon" onclick="wm.open('term')">
-            <div class="d-icon-img">_></div>
+            <div class="d-icon-img" style="color:#00ff9d;">_></div>
             <div class="d-icon-label">Terminal</div>
         </div>
-
         <div class="desktop-icon" onclick="wm.open('web')">
-            <div class="d-icon-img">🌐</div>
-            <div class="d-icon-label">VoxNet Web</div>
+            <div class="d-icon-img" style="color:#00f0ff;">🌐</div>
+            <div class="d-icon-label">VoxNet</div>
         </div>
-
         <div class="desktop-icon" onclick="wm.open('sys')">
-            <div class="d-icon-img">⚡</div>
-            <div class="d-icon-label">SysMonitor</div>
+            <div class="d-icon-img" style="color:#ffbd2e;">⚡</div>
+            <div class="d-icon-label">SysInfo</div>
         </div>
-
         <div class="desktop-icon" onclick="wm.open('files')">
-            <div class="d-icon-img">📁</div>
-            <div class="d-icon-label">Secret_Files</div>
+            <div class="d-icon-img" style="color:#ff4757;">📁</div>
+            <div class="d-icon-label">Encrypted</div>
         </div>
-
     </div>
 
     <div id="start-menu">
-        <div style="border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:5px; color:#fff; font-weight:bold;">
-            VOXTEK OS v14.1
+        <div class="sm-header">
+            <span>CyberChronos</span> <span style="font-size:0.7em; opacity:0.7">v15.0</span>
         </div>
-        <div class="sm-item" onclick="wm.open('term')">Run Terminal</div>
-        <div class="sm-item" onclick="wm.open('web')">Global Network</div>
-        <div class="sm-item" onclick="location.reload()">System Reboot</div>
-        <div class="sm-item" style="color:var(--danger)">Shut Down</div>
+        <div class="sm-item" onclick="wm.open('term')"><span>_></span> Terminal Emulator</div>
+        <div class="sm-item" onclick="wm.open('web')"><span>🌐</span> VoxTek Network</div>
+        <div class="sm-item" onclick="wm.open('sys')"><span>⚡</span> System Monitor</div>
+        <div style="height:1px; background:#333; margin:5px 0;"></div>
+        <div class="sm-item" onclick="location.reload()"><span>↺</span> Reboot System</div>
+        <div class="sm-item" style="color:#ff4757" onclick="alert('Shutdown protocol locked by Admin.')"><span>⏻</span> Shut Down</div>
     </div>
 
-    <div id="win-term" class="window" style="top: 50px; left: 50px; width: 600px; height: 400px;">
+    <div id="win-term" class="window" style="top: 50px; left: 50px; width: 700px; height: 500px;">
         <div class="title-bar" onmousedown="wm.startDrag(event, 'win-term')">
-            <div class="title-drag-area">root@CyberChronos:~</div>
+            <div class="title-drag-area">root@CyberChronos:~/home</div>
             <div class="win-controls">
                 <button class="win-btn min" onclick="wm.minimize('win-term')"></button>
                 <button class="win-btn max" onclick="wm.toggleMaximize('win-term')"></button>
@@ -323,21 +372,23 @@
             </div>
         </div>
         <div class="window-content" onclick="document.getElementById('cmd-in').focus()">
-            <div class="term-body" id="term-box">
-                <div class="term-row" style="color:var(--primary)">VoxTek OS v14.1 [Desktop Edition]</div>
-                <div class="term-row">System initialized. Type 'help' for commands.</div>
-                <div id="term-output"></div>
-                <div class="input-line">
-                    <span style="color:var(--success)">root@cyberchronos:~#</span>
-                    <input type="text" id="cmd-in" class="cmd-input" autocomplete="off">
+            <div class="term-crt-container">
+                <div class="scanlines"></div>
+                <div class="term-body" id="term-box">
+                    <div id="term-output"></div>
+                    <div class="input-line" id="input-line" style="display:none;">
+                        <span id="prompt-span" style="color:var(--success); text-shadow:0 0 5px var(--success);">root@CyberChronos:~#</span>
+                        <input type="text" id="cmd-in" class="cmd-input" autocomplete="off" spellcheck="false">
+                        <div class="cursor-block"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="win-web" class="window" style="top: 80px; left: 100px; width: 800px; height: 500px;">
+    <div id="win-web" class="window" style="top: 80px; left: 100px; width: 900px; height: 600px;">
         <div class="title-bar" onmousedown="wm.startDrag(event, 'win-web')">
-            <div class="title-drag-area">VoxTek Global Network</div>
+            <div class="title-drag-area">VoxTek Global Network [V-Sync Active]</div>
             <div class="win-controls">
                 <button class="win-btn min" onclick="wm.minimize('win-web')"></button>
                 <button class="win-btn max" onclick="wm.toggleMaximize('win-web')"></button>
@@ -350,7 +401,7 @@
         </div>
     </div>
 
-    <div id="win-sys" class="window" style="top: 120px; left: 150px; width: 500px; height: 350px;">
+    <div id="win-sys" class="window" style="top: 120px; left: 150px; width: 500px; height: 400px;">
         <div class="title-bar" onmousedown="wm.startDrag(event, 'win-sys')">
             <div class="title-drag-area">Hardware Monitor</div>
             <div class="win-controls">
@@ -374,11 +425,11 @@
                     <div class="stat-val" style="color:var(--success)">SECURE</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-lbl">Battery</div>
-                    <div class="stat-val" id="batt-val">--</div>
+                    <div class="stat-lbl">V-Sync Status</div>
+                    <div class="stat-val" id="vsync-stat" style="color:var(--warning)">WAITING</div>
                 </div>
                 <div class="stat-card" style="grid-column: span 2;">
-                    <div class="stat-lbl">Machine ID</div>
+                    <div class="stat-lbl">Host Identity</div>
                     <div class="stat-val" style="font-size:1rem;" id="host-name">Detecting...</div>
                 </div>
             </div>
@@ -386,12 +437,14 @@
     </div>
 
     <div id="taskbar">
-        <div class="start-btn" onclick="toggleStartMenu()">❖</div>
+        <div class="start-btn" onclick="toggleStartMenu()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        </div>
         <div class="task-list" id="task-list">
             </div>
         <div class="sys-tray">
             <span id="net-icon" style="color:var(--warning)">⚠ NET</span>
-            <span id="clock">00:00</span>
+            <span id="clock" style="font-weight:bold; color:var(--primary)">00:00</span>
         </div>
     </div>
 
@@ -405,21 +458,20 @@
                 'term': { id: 'win-term', title: 'Terminal', icon: '_>' },
                 'web':  { id: 'win-web', title: 'VoxNet', icon: '🌐' },
                 'sys':  { id: 'win-sys', title: 'System', icon: '⚡' },
-                'files': { id: null, title: 'Access Denied', icon: '🔒' }
+                'files': { id: null, title: 'Encrypted', icon: '🔒' }
             },
             
             open: function(key) {
                 if(key === 'files') {
-                    alert("ENCRYPTED DRIVE: Access restricted by VoxTek Admin.");
+                    // Easter egg alert
+                    alert("ERROR: 403 FORBIDDEN. Biometric scan required for [SECRET_FILES].");
                     return;
                 }
 
                 const winData = this.windows[key];
                 const el = document.getElementById(winData.id);
                 
-                // Show Window
                 el.style.display = 'flex';
-                // Small delay to allow CSS transitions to catch the display:block
                 setTimeout(() => {
                     el.classList.add('open');
                     el.classList.remove('minimized');
@@ -429,35 +481,31 @@
                 this.updateTaskbar();
 
                 if(key === 'web') loadExternalSite();
+                if(key === 'term' && !termBooted) bootTerminal(); // Start boot sequence only once
+                
                 document.getElementById('start-menu').classList.remove('show');
             },
 
             close: function(id) {
                 const el = document.getElementById(id);
                 el.classList.remove('open');
-                el.classList.remove('maximized'); // Reset state
-                setTimeout(() => el.style.display = 'none', 300); // Wait for transition
+                el.classList.remove('maximized');
+                setTimeout(() => el.style.display = 'none', 300);
                 setTimeout(() => this.updateTaskbar(), 350);
             },
 
             minimize: function(id) {
                 const el = document.getElementById(id);
                 el.classList.remove('open');
-                el.classList.remove('maximized'); // Optional: reset max on minimize
+                el.classList.remove('maximized');
                 el.classList.add('minimized');
                 this.updateTaskbar();
             },
 
-            // NEW: Toggle Maximize with smooth transition
             toggleMaximize: function(id) {
                 const el = document.getElementById(id);
                 this.bringToFront(el);
-                
-                if(el.classList.contains('maximized')) {
-                    el.classList.remove('maximized');
-                } else {
-                    el.classList.add('maximized');
-                }
+                el.classList.toggle('maximized');
             },
 
             bringToFront: function(el) {
@@ -469,18 +517,14 @@
             updateTaskbar: function() {
                 const list = document.getElementById('task-list');
                 list.innerHTML = '';
-
                 Object.keys(this.windows).forEach(key => {
                     const winData = this.windows[key];
                     if(!winData.id) return;
-                    
                     const el = document.getElementById(winData.id);
                     if(el.style.display !== 'none' && el.style.display !== '') {
                         const tab = document.createElement('div');
                         tab.className = 'task-tab';
-                        if(!el.classList.contains('minimized') && el.style.zIndex == this.zIndex) {
-                            tab.classList.add('active');
-                        }
+                        if(!el.classList.contains('minimized') && el.style.zIndex == this.zIndex) tab.classList.add('active');
                         tab.innerHTML = `<span>${winData.icon}</span> ${winData.title}`;
                         tab.onclick = () => {
                             if(el.classList.contains('minimized')) {
@@ -500,33 +544,24 @@
 
             startDrag: function(e, id) {
                 const el = document.getElementById(id);
-                // Can't drag if maximized
                 if(el.classList.contains('maximized')) return;
-
                 this.bringToFront(el);
                 el.classList.add('dragging');
-
+                
                 let shiftX = e.clientX - el.getBoundingClientRect().left;
                 let shiftY = e.clientY - el.getBoundingClientRect().top;
-
-                // Temporarily disable transition during drag for performance (optional, but smoother dragging)
                 el.style.transition = 'none';
 
                 function moveAt(pageX, pageY) {
                     el.style.left = pageX - shiftX + 'px';
                     el.style.top = pageY - shiftY + 'px';
                 }
-
-                function onMouseMove(event) {
-                    moveAt(event.pageX, event.pageY);
-                }
+                function onMouseMove(event) { moveAt(event.pageX, event.pageY); }
 
                 document.addEventListener('mousemove', onMouseMove);
-
                 document.onmouseup = function() {
                     document.removeEventListener('mousemove', onMouseMove);
                     el.classList.remove('dragging');
-                    // Restore smooth transition
                     el.style.transition = ''; 
                     document.onmouseup = null;
                 };
@@ -534,7 +569,7 @@
         };
 
         /* =========================================
-           2. SYSTEM UTILITIES
+           2. SYSTEM LOGIC
            ========================================= */
         function updateClock() {
             const now = new Date();
@@ -547,77 +582,203 @@
         function toggleStartMenu() {
             document.getElementById('start-menu').classList.toggle('show');
         }
-
         document.getElementById('desktop').addEventListener('click', (e) => {
-            if(e.target === document.getElementById('desktop')) {
-                document.getElementById('start-menu').classList.remove('show');
-            }
+            if(e.target === document.getElementById('desktop')) document.getElementById('start-menu').classList.remove('show');
         });
 
         /* =========================================
-           3. TERMINAL LOGIC
+           3. ADVANCED TERMINAL LOGIC (BOOT & FILE SYS)
            ========================================= */
         const cmdIn = document.getElementById('cmd-in');
         const termOut = document.getElementById('term-output');
         const termBox = document.getElementById('term-box');
+        const inputLine = document.getElementById('input-line');
+        const promptSpan = document.getElementById('prompt-span');
+        
         let cmdHistory = [];
         let historyIndex = -1;
+        let termBooted = false;
+        
+        // Mock File System
+        let currentPath = "/home/alexzahn";
+        const fileSystem = {
+            "/": { type: "dir", content: ["bin", "home", "var", "etc", "logs"] },
+            "/bin": { type: "dir", content: ["ssh", "ping", "nmap", "hack", "matrix"] },
+            "/home": { type: "dir", content: ["alexzahn"] },
+            "/home/alexzahn": { type: "dir", content: ["notes.txt", "vox_plan.enc", "todo.list"] },
+            "/var": { type: "dir", content: ["www", "log"] },
+            "notes.txt": { type: "file", content: "To-Do: \n1. Sync with VoxTek Mainframe.\n2. Upgrade firewall.\n3. Watch Hazbin ep 8 again." },
+            "todo.list": { type: "file", content: "- Destroy Alastor's radio towers\n- Buy more screens\n- Calibrate V-Sync" },
+            "vox_plan.enc": { type: "file", content: "[ENCRYPTED DATA] - ACCESS DENIED" }
+        };
 
-        termBox.addEventListener('click', () => cmdIn.focus());
+        // Boot Animation
+        async function bootTerminal() {
+            termBooted = true;
+            inputLine.style.display = 'none';
+            
+            const bootText = [
+                "Initializing VoxTek Kernel v15.0...",
+                "Loading memory... 64GB OK",
+                "Checking CPU... Neural-Link OK",
+                "Mounting filesystem... OK",
+                "Starting V-Sync Protocol... CONNECTED",
+                "Establishing secure tunnel to HellNet... SUCCESS",
+                "----------------------------------------",
+                "Welcome back, AleXZahn.",
+                "System is ready."
+            ];
 
-        function log(txt, color="#ccc") {
+            for (let line of bootText) {
+                await typeText(line, "#00f0ff");
+                await new Promise(r => setTimeout(r, 150));
+            }
+            
+            inputLine.style.display = 'flex';
+            cmdIn.focus();
+        }
+
+        // Typing Effect Function
+        function typeText(text, color="#fff", speed=10) {
+            return new Promise(resolve => {
+                const div = document.createElement('div');
+                div.className = 'term-row';
+                div.style.color = color;
+                termOut.appendChild(div);
+                
+                let i = 0;
+                function type() {
+                    if (i < text.length) {
+                        div.textContent += text.charAt(i);
+                        i++;
+                        termBox.scrollTop = termBox.scrollHeight;
+                        setTimeout(type, speed);
+                    } else {
+                        resolve();
+                    }
+                }
+                type();
+            });
+        }
+
+        function simpleLog(text, color="#ccc") {
             const div = document.createElement('div');
             div.className = 'term-row';
             div.style.color = color;
-            div.innerText = txt;
+            div.textContent = text;
             termOut.appendChild(div);
             termBox.scrollTop = termBox.scrollHeight;
         }
 
+        // Command Processing
         cmdIn.addEventListener('keydown', (e) => {
             if(e.key === 'Enter') {
                 const raw = cmdIn.value;
                 if(!raw.trim()) return;
+                
                 cmdHistory.push(raw);
                 historyIndex = cmdHistory.length;
                 
-                log(`root@cyberchronos:~# ${raw}`, "#fff");
+                simpleLog(`${promptSpan.innerText} ${raw}`, "#fff");
                 processCommand(raw.trim());
                 cmdIn.value = '';
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex > 0) { historyIndex--; cmdIn.value = cmdHistory[historyIndex]; }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex < cmdHistory.length - 1) { historyIndex++; cmdIn.value = cmdHistory[historyIndex]; }
+                else { historyIndex = cmdHistory.length; cmdIn.value = ''; }
             }
         });
 
-        function processCommand(cmd) {
+        async function processCommand(cmd) {
             const parts = cmd.split(' ');
             const c = parts[0].toLowerCase();
+            const arg = parts[1];
 
-            if(c === 'help') {
-                log("COMMANDS: help, clear, ping web, whoami, reboot");
-            } else if(c === 'clear') {
-                termOut.innerHTML = '';
-            } else if(c === 'whoami') {
-                log("User: AleXZahn (Admin)", "var(--primary)");
-            } else if(c === 'reboot') {
-                location.reload();
-            } else if(c === 'ping') {
-                if(parts[1] === 'web') {
-                    const iframe = document.getElementById('vox-frame');
-                    if(iframe.src === 'about:blank') {
-                        log("Error: VoxNet (Browser) is not open/loaded.", "var(--danger)");
+            switch(c) {
+                case 'help':
+                    simpleLog("Available Commands:");
+                    simpleLog("  ls        - List directory contents");
+                    simpleLog("  cd [dir]  - Change directory");
+                    simpleLog("  cat [file]- Read file content");
+                    simpleLog("  ping web  - Test VoxNet latency");
+                    simpleLog("  clear     - Clear terminal");
+                    simpleLog("  matrix    - Run visualizer");
+                    break;
+                
+                case 'clear':
+                    termOut.innerHTML = '';
+                    break;
+
+                case 'ls':
+                    const dir = fileSystem[currentPath];
+                    if(dir && dir.type === 'dir') {
+                        simpleLog(dir.content.join("   "), "var(--primary)");
                     } else {
-                        log("Sending PING to VoxTek Mainframe...", "var(--warning)");
-                        iframe.contentWindow.postMessage({ type: 'PING' }, "https://voxtek-site.vercel.app");
+                        simpleLog("Error: Directory not found", "var(--danger)");
                     }
-                } else {
-                    log("Pong!");
-                }
-            } else {
-                log(`bash: ${c}: command not found`, "var(--danger)");
+                    break;
+
+                case 'cd':
+                    if(!arg || arg === "~") {
+                        currentPath = "/home/alexzahn";
+                    } else if(arg === "..") {
+                        // Very simple parent logic
+                        if(currentPath !== "/") {
+                            const pathParts = currentPath.split('/');
+                            pathParts.pop();
+                            currentPath = pathParts.join('/') || "/";
+                        }
+                    } else {
+                        const target = currentPath === "/" ? `/${arg}` : `${currentPath}/${arg}`;
+                        if(fileSystem[target] && fileSystem[target].type === 'dir') {
+                            currentPath = target;
+                        } else {
+                            simpleLog(`bash: cd: ${arg}: No such directory`, "var(--danger)");
+                        }
+                    }
+                    promptSpan.innerText = `root@CyberChronos:${currentPath === "/home/alexzahn" ? "~" : currentPath}#`;
+                    break;
+
+                case 'cat':
+                    if(fileSystem[arg] && fileSystem[arg].type === 'file') {
+                        simpleLog(fileSystem[arg].content, "#ccc");
+                    } else {
+                        simpleLog(`cat: ${arg}: No such file`, "var(--danger)");
+                    }
+                    break;
+
+                case 'ping':
+                    if(arg === 'web') {
+                        const iframe = document.getElementById('vox-frame');
+                        if(iframe.src === 'about:blank') {
+                            simpleLog("Error: VoxNet browser not open.", "var(--danger)");
+                        } else {
+                            simpleLog("Pinging VoxTek Mainframe...", "var(--warning)");
+                            iframe.contentWindow.postMessage({ type: 'PING' }, "https://voxtek-site.vercel.app");
+                        }
+                    } else {
+                        simpleLog("Usage: ping web");
+                    }
+                    break;
+                
+                case 'matrix':
+                    simpleLog("Wake up, Neo...", "#00ff00");
+                    for(let i=0; i<10; i++) {
+                        await new Promise(r => setTimeout(r, 100));
+                        simpleLog(`01010101010111000101010101 ${Math.random()}`, "#00ff00");
+                    }
+                    break;
+
+                default:
+                    simpleLog(`bash: ${c}: command not found`, "var(--danger)");
             }
         }
 
         /* =========================================
-           4. FIREBASE & WEB SYNC
+           4. FIREBASE & IFRAME (Backend)
            ========================================= */
         const firebaseConfig = {
             apiKey: "AIzaSyDaYxxhxjrvjVgqYcvPH53989Wr5dMgqHI",
@@ -627,33 +788,21 @@
             messagingSenderId: "137141100080",
             appId: "1:137141100080:web:1b798f2e7aa12a313cd7f5"
         };
-
         try {
             firebase.initializeApp(firebaseConfig);
             const auth = firebase.auth();
             const db = firebase.firestore();
-
             auth.signInAnonymously().then(user => {
                 document.getElementById('net-icon').innerText = "● NET";
                 document.getElementById('net-icon').style.color = "var(--success)";
-                
-                const savedName = localStorage.getItem('cc_host') || 'CyberChronos 14 Pro';
+                const savedName = localStorage.getItem('cc_host') || 'CyberChronos';
                 document.getElementById('host-name').innerText = savedName;
-
                 db.collection('users').doc(user.user.uid).set({
-                    name: savedName,
-                    status: 'ONLINE',
-                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    name: savedName, status: 'ONLINE', lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             });
+        } catch(e) { console.log("Offline Mode"); }
 
-        } catch(e) {
-            console.log("Offline Mode");
-        }
-
-        /* =========================================
-           5. IFRAME LOADER
-           ========================================= */
         let iframeLoaded = false;
         function loadExternalSite() {
             if(iframeLoaded) return;
@@ -666,12 +815,13 @@
         window.addEventListener('message', (event) => {
             if (event.origin !== "https://voxtek-site.vercel.app") return;
             if (event.data.type === 'PONG') {
-                log(`>> Reply from VoxTek Site: ${event.data.message}`, "var(--success)");
+                simpleLog(`>> Reply: ${event.data.message}`, "var(--success)");
+                document.getElementById('vsync-stat').innerText = "SYNCED";
+                document.getElementById('vsync-stat').style.color = "var(--success)";
             }
         });
 
         updateClock();
-        
     </script>
 </body>
 </html>
