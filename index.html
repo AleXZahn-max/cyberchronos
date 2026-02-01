@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#020202">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>CyberChronos OS v16.0 [Mobile Core]</title>
+    <title>CyberChronos OS v17.0 [Public Access]</title>
     
     <link rel="stylesheet" href="styles.css">
     
@@ -17,45 +15,46 @@
 </head>
 <body>
 
-    <div id="auth-modal" class="modal-overlay active">
+    <div id="auth-modal" class="modal-overlay">
         <div class="auth-box">
             <div class="auth-header">
                 <h3>VOXTEK IDENTITY</h3>
-                <p>Secure Link Required</p>
+                <p>Enter Secure Credentials</p>
             </div>
             <form id="login-form">
                 <input type="email" id="email" placeholder="CODENAME (EMAIL)" required class="auth-input">
                 <input type="password" id="password" placeholder="ACCESS KEY (PASSWORD)" required class="auth-input">
-                <button type="submit" class="auth-btn">INITIALIZE LINK</button>
+                <button type="submit" class="auth-btn">ESTABLISH LINK</button>
             </form>
-            <div class="auth-footer" id="auth-msg">System Ready...</div>
+            <button class="auth-btn-close" onclick="toggleLoginModal()">CANCEL</button>
+            <div class="auth-footer" id="auth-msg">Standby...</div>
         </div>
     </div>
 
     <nav class="top-nav">
         <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu" id="menuBtn">☰</button>
         <div class="top-status">
-            <span class="desktop-only">UID: <span id="header-uid" style="color:var(--primary)">---</span> | </span>
-            NET: <span id="net-stat" style="color:var(--warning)">SYNCING</span>
+            UID: <span id="header-uid" style="color:var(--primary)">GUEST</span> | 
+            NET: <span id="net-stat" style="color:var(--success)">OPEN</span>
         </div>
     </nav>
 
     <aside class="sidebar" id="sidebar">
         <div class="brand">
             <h1>CyberChronos</h1>
-            <span>SYSTEM v16.0</span>
+            <span>SYSTEM v17.0</span>
         </div>
 
         <div class="user-profile-widget">
             <div class="avatar-wrapper">
-                <div class="avatar-ring" id="user-role-ring">
-                    <img id="user-avatar" src="https://via.placeholder.com/100/000000/00f0ff?text=..." alt="Avatar">
+                <div class="avatar-ring role-guest" id="user-role-ring">
+                    <img id="user-avatar" src="https://via.placeholder.com/100/000000/00f0ff?text=?" alt="Avatar">
                 </div>
-                <div class="role-badge" id="user-role-badge">LOADING</div>
+                <div class="role-badge" id="user-role-badge">CITIZEN</div>
             </div>
             <div class="user-info">
-                <div class="u-name" id="user-name">Initializing...</div>
-                <div class="u-id" id="user-role-text">Authenticating</div>
+                <div class="u-name" id="user-name">Citizen-0000</div>
+                <div class="u-id" id="user-role-text">Unregistered Entity</div>
             </div>
         </div>
 
@@ -64,7 +63,7 @@
             <button class="nav-btn" onclick="switchTab('term', this)">TERMINAL</button>
             <button class="nav-btn" onclick="window.open('https://voxtek-site.vercel.app', '_blank')">VOXTEK MAIN</button>
             <div class="nav-sep"></div>
-            <button class="nav-btn logout-btn" onclick="logout()">DISCONNECT</button>
+            <button class="nav-btn auth-toggle-btn" id="authBtn" onclick="handleAuthClick()">CONNECT LINK</button>
         </nav>
     </aside>
 
@@ -75,17 +74,17 @@
 
             <div class="grid-layout">
                 <div class="card">
-                    <div class="card-label">Device ID</div>
-                    <div class="card-value" id="host-name">Unknown</div>
-                    <div class="card-sub" style="color: var(--success);">SECURE CONNECTION</div>
+                    <div class="card-label">Identity</div>
+                    <div class="card-value" id="host-name">Guest Node</div>
+                    <div class="card-sub" style="color: var(--warning);">LOCAL ONLY</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Global Nodes</div>
+                    <div class="card-label">Active Nodes</div>
                     <div class="card-value" id="active-count">0</div>
-                    <div class="card-sub">VOXTEK NETWORK</div>
+                    <div class="card-sub">GLOBAL NETWORK</div>
                 </div>
                 <div class="card">
-                    <div class="card-label">Battery Level</div>
+                    <div class="card-label">Power Core</div>
                     <div class="card-value" id="batt-val">--%</div>
                     <div class="card-sub" id="batt-status">Scanning...</div>
                 </div>
@@ -94,50 +93,32 @@
             <div class="users-section">
                 <div class="users-header">Active Neural Links [LIVE]</div>
                 <div class="users-grid" id="users-grid">
-                    </div>
+                    <div style="padding:10px; color:#666; font-size:0.8rem;">Login required to see global network.</div>
+                </div>
             </div>
 
-            <div class="info-section">
-                <div class="text-panel">
-                    <h3>:: CyberChronos Technologies</h3>
-                    <p>
-                        A strategic division of <strong>VoxTek Enterprises</strong>. We provide zero-latency operating environments for the modern digital soul.
-                        <br><br>
-                        Trust in stability. Trust in VoxTek.
-                    </p>
-                </div>
-                <div class="text-panel" style="border-left-color: var(--success);">
-                    <h3>:: System Logs</h3>
-                    <div class="feature-list" id="mini-log-view">
-                        <div class="f-item"><span>System Boot...</span><span class="f-tag">OK</span></div>
-                    </div>
-                </div>
-            </div>
-            
             <div class="net-monitor">
-                <div class="card-label">Encrypted Data Stream</div>
+                <div class="card-label">Data Stream</div>
                 <div class="bars-container" id="visualizer"></div>
             </div>
         </section>
 
         <section id="term" class="panel">
-            <h2>Command Interface <span class="meta-tag">ROOT</span></h2>
+            <h2>Command Interface <span class="meta-tag">GUEST</span></h2>
             <div class="term-wrapper">
                 <div class="term-header">
-                    <div class="term-dot red"></div>
-                    <div class="term-dot yellow"></div>
-                    <div class="term-dot green"></div>
-                    <span style="margin-left:auto; color:#666">bash — mobile_optimized</span>
+                    <div class="term-dot red"></div><div class="term-dot yellow"></div><div class="term-dot green"></div>
+                    <span style="margin-left:auto; color:#666">bash — public</span>
                 </div>
                 <div class="terminal-box" id="term-box" role="log" aria-live="polite">
-                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v16.0 [Mobile Core]</div>
-                    <div class="term-row">Advanced Logging: ENABLED</div>
-                    <div class="term-row">Type 'help' to see commands.</div>
+                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v17.0</div>
+                    <div class="term-row">Login as: Guest (Citizen)</div>
+                    <div class="term-row">Restricted Access. Type 'help'.</div>
                     <br>
                     <div id="term-output"></div>
                     <div class="input-row">
-                        <span class="prompt">root@cyberchronos:~#</span>
-                        <input type="search" class="cmd-input" id="cmd-in" autocomplete="off" spellcheck="false" enterkeyhint="go">
+                        <span class="prompt" id="term-prompt">guest@cyberchronos:~#</span>
+                        <input type="search" class="cmd-input" id="cmd-in" autocomplete="off" enterkeyhint="go">
                     </div>
                 </div>
             </div>
