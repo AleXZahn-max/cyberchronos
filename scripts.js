@@ -14,6 +14,18 @@ let currentUser = null;
 let userDocRef = null;
 let guestName = "Citizen-" + Math.floor(Math.random() * 9000 + 1000); 
 
+// --- GENERATE AVATAR (NO INTERNET REQUIRED) ---
+function generateAvatar(text) {
+    // Рисуем SVG картинку: черный фон, неоновая буква
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+        <rect width="100" height="100" fill="#050505"/>
+        <text x="50" y="55" font-family="monospace" font-size="50" font-weight="bold" fill="#00f0ff" text-anchor="middle" dominant-baseline="middle">${text}</text>
+    </svg>`;
+    // Кодируем в формат, понятный браузеру
+    return "data:image/svg+xml;base64," + btoa(svg);
+}
+
 // Mobile Viewport Fix
 const setAppHeight = () => {
     document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
@@ -155,11 +167,15 @@ function loadUserProfile(uid) {
 
 function createDefaultProfile(uid) {
     const defName = "Unit-" + Math.floor(Math.random()*9999);
+    // Берем первую букву имени (например "U")
+    const letter = defName.charAt(0).toUpperCase(); 
+    
     db.collection('users').doc(uid).set({
         uid: uid,
         name: defName,
         role: "user",
-        avatar: "https://placehold.co/100/000000/00f0ff?text=" + defName.charAt(0),
+        // ГЕНЕРАЦИЯ АВАТАРКИ:
+        avatar: generateAvatar(letter), 
         status: "ONLINE",
         device: getOS(),
         lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -174,9 +190,19 @@ function setProfileUI(data) {
     const ring = document.getElementById('user-role-ring');
     const badge = document.getElementById('user-role-badge');
 
-    if(nameEl) nameEl.innerText = data.name || "Unknown";
-    if(dashNameEl) dashNameEl.innerText = data.name || guestName;
-    if(avatarEl) avatarEl.src = data.avatar || "https://placehold.co/100/000000/00f0ff?text=?";
+    const displayName = data.name || "Unknown";
+    
+    if(nameEl) nameEl.innerText = displayName;
+    if(dashNameEl) dashNameEl.innerText = displayName;
+    
+    // ГЕНЕРАЦИЯ АВАТАРКИ ЕСЛИ ЕЁ НЕТ:
+    if(avatarEl) {
+        if (data.avatar && data.avatar.startsWith('data:')) {
+            avatarEl.src = data.avatar;
+        } else {
+            avatarEl.src = generateAvatar(displayName.charAt(0));
+        }
+    }
 
     if(ring) ring.className = "avatar-ring"; 
 
@@ -193,7 +219,6 @@ function setProfileUI(data) {
         if(badge) { badge.innerText = "OPERATOR"; badge.style.color = "var(--primary)"; badge.style.borderColor = "#333"; }
         if(roleTextEl) roleTextEl.innerText = "Standard Access";
     } else {
-        // GUEST
         if(ring) ring.classList.add('role-guest');
         if(badge) { badge.innerText = "CITIZEN"; badge.style.color = "#666"; badge.style.borderColor = "#333"; }
         if(roleTextEl) roleTextEl.innerText = "Unregistered Entity";
@@ -235,12 +260,17 @@ function listenToNetwork() {
                 if(data.role === 'admin') roleClass = 'role-admin';
                 if(data.role === 'vip') roleClass = 'role-vip';
 
-                const av = data.avatar || `https://placehold.co/40/000000/00f0ff?text=?`;
+                const safeName = data.name || "Unknown";
+                // ПРОВЕРКА И ГЕНЕРАЦИЯ:
+                let av = data.avatar;
+                if (!av || !av.startsWith('data:')) {
+                    av = generateAvatar(safeName.charAt(0));
+                }
 
                 card.innerHTML = `
                     <img src="${av}" class="node-avatar ${roleClass}">
                     <div class="node-info">
-                        <span class="node-name" style="${data.role==='admin'?'color:var(--danger)':''}">${data.name}</span>
+                        <span class="node-name" style="${data.role==='admin'?'color:var(--danger)':''}">${safeName}</span>
                         <span class="node-status">● ONLINE [${data.device || 'Unknown'}]</span>
                     </div>
                 `;
