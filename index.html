@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#020202">
-    <title>CyberChronos OS v18.0 [Grandmaster]</title>
+    <title>CyberChronos OS v19.0 [Overwatch]</title>
     
     <link rel="stylesheet" href="styles.css">
     
@@ -43,7 +43,7 @@
     <aside class="sidebar" id="sidebar">
         <div class="brand">
             <h1>CyberChronos</h1>
-            <span>SYSTEM v18.0</span>
+            <span>SYSTEM v19.0</span>
         </div>
 
         <div class="user-profile-widget">
@@ -61,7 +61,8 @@
 
         <nav class="nav-menu">
             <button class="nav-btn active" onclick="switchTab('dash', this)">SYSTEM STATUS</button>
-            <button class="nav-btn" onclick="switchTab('control', this)">MAIN CONTROL</button> <button class="nav-btn" onclick="switchTab('term', this)">TERMINAL</button>
+            <button class="nav-btn" onclick="switchTab('control', this)">VOXTEK OVERWATCH</button>
+            <button class="nav-btn" onclick="switchTab('term', this)">TERMINAL</button>
             <div class="nav-sep"></div>
             <button class="nav-btn auth-toggle-btn" id="authBtn" onclick="handleAuthClick()">CONNECT LINK</button>
         </nav>
@@ -99,41 +100,6 @@
                 </div>
             </div>
 
-            <div class="info-section">
-                <div class="text-panel">
-                    <h3>:: CyberChronos Technologies</h3>
-                    <p>
-                        Founded as a strategic division of <strong>VoxTek Enterprises</strong>, CyberChronos is dedicated to the development of zero-latency operating environments. 
-                        Our kernel architecture eliminates the delay between user intent and digital execution.
-                    </p>
-                    <div style="font-family: var(--font-code); font-size: 0.75rem; color: var(--primary); margin-top: 10px;">
-                        >> STATUS: MARKET DOMINANCE ACHIEVED
-                    </div>
-                </div>
-
-                <div class="text-panel" style="border-left-color: var(--success);">
-                    <h3>:: Core Modules</h3>
-                    <div class="feature-list">
-                        <div class="f-item">
-                            <span>Vox-Encryption Standard (AES-4096)</span>
-                            <span class="f-tag">ACTIVE</span>
-                        </div>
-                        <div class="f-item">
-                            <span>Neuro-Sync Kernel v18.0</span>
-                            <span class="f-tag">ACTIVE</span>
-                        </div>
-                        <div class="f-item">
-                            <span>Global Surveillance Uplink</span>
-                            <span class="f-tag">STANDBY</span>
-                        </div>
-                        <div class="f-item">
-                            <span>Ad-Revenue Optimization</span>
-                            <span class="f-tag">MAXIMIZED</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <div class="net-monitor">
                 <div class="card-label">Encrypted Data Stream</div>
                 <div class="bars-container" id="visualizer"></div>
@@ -141,26 +107,92 @@
         </section>
 
         <section id="control" class="panel">
-            <h2>Command Center <span class="meta-tag" style="background:var(--danger); color:black;">TOP SECRET</span></h2>
+            <h2>Overwatch Control <span class="meta-tag" style="background:var(--danger); color:black;">ADMIN ONLY</span></h2>
             
             <div id="admin-view" class="secure-wrapper" style="display:none;">
                 <div class="secure-header">
                     <div class="secure-indicator">
                         <div class="led-blink"></div>
-                        <span>SECURE CONNECTION ESTABLISHED TO VOXTEK-MAIN</span>
+                        <span>CONNECTED TO: voxtek-site.vercel.app [CORE]</span>
                     </div>
-                    <button class="nav-btn" style="padding:5px 10px; border:1px solid var(--primary); font-size:0.7rem;" onclick="window.open('https://voxtek-site.vercel.app', '_blank')">OPEN EXT.</button>
+                    <div style="font-family: var(--font-code); color: var(--success);">PING: 12ms</div>
                 </div>
-                <div class="crt-frame">
-                    <iframe id="site-frame" src="" frameborder="0"></iframe>
-                    <div class="scanline"></div>
+
+                <div class="control-grid">
+                    <div class="c-widget large">
+                        <div class="w-head">SERVER INTEGRITY</div>
+                        <div class="server-status-box">
+                            <div class="status-circle" id="srv-circle">
+                                <span id="srv-text">OK</span>
+                            </div>
+                            <div class="status-details">
+                                <div>UPTIME: <span style="color:white">99.9%</span></div>
+                                <div>LOAD: <span style="color:var(--primary)">14%</span></div>
+                                <div>TEMP: <span style="color:var(--success)">34°C</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="c-widget">
+                        <div class="w-head">SECURITY PROTOCOLS</div>
+                        <div class="switch-row">
+                            <span>FIREWALL</span>
+                            <label class="cyber-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="switch-row">
+                            <span>ANTI-DDOS</span>
+                            <label class="cyber-switch">
+                                <input type="checkbox" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="switch-row">
+                            <span>GHOST MODE</span>
+                            <label class="cyber-switch">
+                                <input type="checkbox">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="c-widget">
+                        <div class="w-head">TRAFFIC LIMITER</div>
+                        <div class="slider-container">
+                            <input type="range" min="0" max="100" value="80" class="cyber-range" id="traffic-range">
+                            <div class="range-val" id="traffic-val">80%</div>
+                        </div>
+                        <div style="margin-top:10px; font-size:0.7rem; color:#666;">
+                            LIMITING BANDWIDTH SAVES POWER BUT INCREASES LATENCY.
+                        </div>
+                    </div>
+
+                    <div class="c-widget">
+                        <div class="w-head">EMERGENCY ACTIONS</div>
+                        <div class="action-btn-grid">
+                            <button class="act-btn" onclick="log('>> FLUSHING DNS CACHE...', 'var(--warning)')">FLUSH DNS</button>
+                            <button class="act-btn" onclick="log('>> RESTARTING PODS...', 'var(--primary)')">REBOOT</button>
+                            <button class="act-btn danger" onclick="alert('ARE YOU SURE YOU WANT TO INITIATE LOCKDOWN?')">LOCKDOWN</button>
+                        </div>
+                    </div>
+
+                    <div class="c-widget wide">
+                        <div class="w-head">LIVE SERVER LOGS</div>
+                        <div class="log-window" id="server-logs">
+                            <div class="log-line"><span class="l-time">14:02:01</span> [INFO] Connection accepted from 192.168.0.1</div>
+                            <div class="log-line"><span class="l-time">14:02:05</span> [WARN] High latency detected in Sector 7</div>
+                            <div class="log-line"><span class="l-time">14:03:12</span> [INFO] User "Angel_Dust" authorized</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="locked-view" class="lock-screen">
                 <div class="lock-icon">🔒</div>
                 <h3>ACCESS DENIED</h3>
-                <p>This frequency is reserved for VoxTek Administrators only.</p>
+                <p>This Control Panel is reserved for VoxTek Administrators only.</p>
                 <div class="lock-code">ERR_CODE: 403_FORBIDDEN_ENTITY</div>
             </div>
         </section>
@@ -175,7 +207,7 @@
                     <span style="margin-left:auto; color:#666">bash — public_access</span>
                 </div>
                 <div class="terminal-box" id="term-box" role="log" aria-live="polite">
-                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v18.0 [Public]</div>
+                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v19.0 [Public]</div>
                     <div class="term-row">Login as: Guest (Citizen)</div>
                     <div class="term-row">Type 'help' to see available commands.</div>
                     <br>
