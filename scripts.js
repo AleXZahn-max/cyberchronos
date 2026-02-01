@@ -414,19 +414,20 @@ function toggleSidebar() {
     if(sb) sb.classList.toggle('open');
 }
 
-// === UPDATED SWITCH TAB FUNCTION (ACCESS CONTROL) ===
+// === UPDATED SWITCH TAB (FORCE LOAD) ===
 function switchTab(id, btn) {
+    // 1. Убираем активные классы со всего
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     
+    // 2. Включаем нужную панель
     const panel = document.getElementById(id);
     if(panel) panel.classList.add('active');
     
-    // Auto-select button if not passed (useful when calling from code)
+    // 3. Подсвечиваем кнопку
     if(btn) {
         btn.classList.add('active');
     } else {
-        // Try to find the button
         const btns = document.querySelectorAll('.nav-btn');
         if(id === 'dash') btns[0].classList.add('active');
         if(id === 'control') btns[1].classList.add('active');
@@ -439,24 +440,28 @@ function switchTab(id, btn) {
         const lockedView = document.getElementById('locked-view');
         const frame = document.getElementById('site-frame');
 
+        // Проверяем роль (admin или vip - на твой выбор, сейчас стоит admin)
         if(userRole === 'admin') {
-            // AUTHORIZED
+            // >> ДОСТУП РАЗРЕШЕН
             lockedView.style.display = 'none';
             adminView.style.display = 'flex';
             
-            // Загружаем сайт только сейчас, чтобы не тратить ресурсы
-            // И чтобы не палиться раньше времени
-            if(frame && !frame.src) {
-                frame.src = "https://voxtek-site.vercel.app";
-            }
+            console.log(">> SYSTEM: Initializing Main Control Link...");
+            
+            // ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА (FORCE LOAD)
+            // Мы убрали проверку (!frame.src), теперь он будет обновлять сайт при каждом клике.
+            // Это гарантирует, что картинка появится.
+            frame.src = "https://voxtek-site.vercel.app"; 
+            
         } else {
-            // DENIED
+            // >> ДОСТУП ЗАПРЕЩЕН
             adminView.style.display = 'none';
             lockedView.style.display = 'flex';
-            if(frame) frame.src = ""; // Clear src if unauthorized
+            if(frame) frame.src = "about:blank"; // Очищаем канал для безопасности
         }
     }
 
+    // Мобильное меню
     if(window.innerWidth <= 900) {
         const sb = document.getElementById('sidebar');
         if(sb) sb.classList.remove('open');
