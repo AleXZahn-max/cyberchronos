@@ -61,8 +61,7 @@
 
         <nav class="nav-menu">
             <button class="nav-btn active" onclick="switchTab('dash', this)">SYSTEM STATUS</button>
-            <button class="nav-btn" onclick="switchTab('term', this)">TERMINAL</button>
-            <button class="nav-btn" onclick="window.open('https://voxtek-site.vercel.app', '_blank')">VOXTEK MAIN</button>
+            <button class="nav-btn" onclick="switchTab('control', this)">MAIN CONTROL</button> <button class="nav-btn" onclick="switchTab('term', this)">TERMINAL</button>
             <div class="nav-sep"></div>
             <button class="nav-btn auth-toggle-btn" id="authBtn" onclick="handleAuthClick()">CONNECT LINK</button>
         </nav>
@@ -107,10 +106,6 @@
                         Founded as a strategic division of <strong>VoxTek Enterprises</strong>, CyberChronos is dedicated to the development of zero-latency operating environments. 
                         Our kernel architecture eliminates the delay between user intent and digital execution.
                     </p>
-                    <p>
-                        Version 18.0 utilizes the advanced <em>"Neuro-Sync"</em> protocol, allowing seamless integration with bio-digital implants and high-frequency surveillance grids. 
-                        Trust in stability. Trust in VoxTek.
-                    </p>
                     <div style="font-family: var(--font-code); font-size: 0.75rem; color: var(--primary); margin-top: 10px;">
                         >> STATUS: MARKET DOMINANCE ACHIEVED
                     </div>
@@ -142,6 +137,31 @@
             <div class="net-monitor">
                 <div class="card-label">Encrypted Data Stream</div>
                 <div class="bars-container" id="visualizer"></div>
+            </div>
+        </section>
+
+        <section id="control" class="panel">
+            <h2>Command Center <span class="meta-tag" style="background:var(--danger); color:black;">TOP SECRET</span></h2>
+            
+            <div id="admin-view" class="secure-wrapper" style="display:none;">
+                <div class="secure-header">
+                    <div class="secure-indicator">
+                        <div class="led-blink"></div>
+                        <span>SECURE CONNECTION ESTABLISHED TO VOXTEK-MAIN</span>
+                    </div>
+                    <button class="nav-btn" style="padding:5px 10px; border:1px solid var(--primary); font-size:0.7rem;" onclick="window.open('https://voxtek-site.vercel.app', '_blank')">OPEN EXT.</button>
+                </div>
+                <div class="crt-frame">
+                    <iframe id="site-frame" src="" frameborder="0"></iframe>
+                    <div class="scanline"></div>
+                </div>
+            </div>
+
+            <div id="locked-view" class="lock-screen">
+                <div class="lock-icon">🔒</div>
+                <h3>ACCESS DENIED</h3>
+                <p>This frequency is reserved for VoxTek Administrators only.</p>
+                <div class="lock-code">ERR_CODE: 403_FORBIDDEN_ENTITY</div>
             </div>
         </section>
 
