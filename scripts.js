@@ -25,7 +25,6 @@ function generateAvatar(text) {
     return "data:image/svg+xml;base64," + btoa(svg);
 }
 
-// Mobile Viewport Fix
 const setAppHeight = () => {
     document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
 };
@@ -43,7 +42,7 @@ try {
     if(el) { el.innerText = "CONFIG ERR"; el.style.color = "var(--danger)"; }
 }
 
-// --- 3. DYNAMIC AUTH LOGIC ---
+// --- 3. AUTH LOGIC ---
 
 function handleAuthClick() {
     if (currentUser) {
@@ -131,7 +130,6 @@ if (auth) {
     });
 }
 
-// Login Form
 const loginForm = document.getElementById('login-form');
 if(loginForm) {
     loginForm.addEventListener('submit', (e) => {
@@ -165,7 +163,7 @@ function loadUserProfile(uid) {
     userDocRef.onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
-            userRole = data.role || "user"; // Store role globally
+            userRole = data.role || "user"; 
             setProfileUI(data);
         } else {
             createDefaultProfile(uid);
@@ -243,15 +241,12 @@ setInterval(() => {
     if(userDocRef && firebase) userDocRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
 }, 60000);
 
-// --- 5. NETWORK LISTENER ---
-
 function listenToNetwork() {
     if(!db) return;
     db.collection('users').where('status', '==', 'ONLINE')
         .onSnapshot((snapshot) => {
             const grid = document.getElementById('users-grid');
             if(!grid) return;
-            
             grid.innerHTML = '';
             const activeEl = document.getElementById('active-count');
             if(activeEl) activeEl.innerText = snapshot.size;
@@ -260,17 +255,14 @@ function listenToNetwork() {
                 const data = doc.data();
                 const card = document.createElement('div');
                 card.className = 'user-node';
-                
                 let roleClass = 'role-user';
                 if(data.role === 'admin') roleClass = 'role-admin';
                 if(data.role === 'vip') roleClass = 'role-vip';
-
                 const safeName = data.name || "Unknown";
                 let av = data.avatar;
                 if (!av || !av.startsWith('data:')) {
                     av = generateAvatar(safeName.charAt(0));
                 }
-
                 card.innerHTML = `
                     <img src="${av}" class="node-avatar ${roleClass}">
                     <div class="node-info">
@@ -283,34 +275,23 @@ function listenToNetwork() {
         });
 }
 
-// --- 6. TERMINAL ENGINE ---
+// --- 5. TERMINAL & LOGS ---
 
 const cmdIn = document.getElementById('cmd-in');
 const termOut = document.getElementById('term-output');
 const termBox = document.getElementById('term-box');
-let activeProcessTimers = [];
-
-function scheduleLog(fn, delay) {
-    const id = setTimeout(() => {
-        fn();
-        activeProcessTimers = activeProcessTimers.filter(t => t !== id);
-    }, delay);
-    activeProcessTimers.push(id);
-}
 
 function log(txt, col="#aaa", isInput=false) {
     if(!termOut) return;
     const d = document.createElement('div');
     d.className = 'term-row';
     d.style.color = col;
-    
     if(isInput) {
         const prompt = currentUser ? "root@cyberchronos:~# " : "guest@cyberchronos:~# ";
         d.innerHTML = `<span style="color:${currentUser?'#00ff9d':'#aaa'}">${prompt}</span> <span style="color:#fff">${txt}</span>`;
     } else {
         d.textContent = txt;
     }
-
     termOut.appendChild(d);
     if(termBox) termBox.scrollTop = termBox.scrollHeight;
 }
@@ -338,7 +319,6 @@ function processCommand(raw) {
         case 'status': log("System Operational."); break;
         case 'sysinfo': log(`Device: ${getOS()}`); break;
         case 'date': log(new Date().toString()); break;
-        
         case 'logout': logout(); break;
         case 'whoami': log(currentUser ? `UID: ${currentUser.uid}` : "Guest"); break;
         case 'setname':
@@ -347,13 +327,8 @@ function processCommand(raw) {
                 log(`Identity updated to: ${arg}`, "var(--success)");
             } else log("Error: Name required.", "var(--danger)");
             break;
-        case 'encrypt': 
-            log("Initializing encryption...", "var(--warning)");
-            scheduleLog(() => log(">> Generating keys...", "#aaa"), 500);
-            scheduleLog(() => log(">> Done.", "var(--success)"), 1200);
-            break;
+        case 'encrypt': log("Encryption cycling...", "var(--warning)"); break;
         case 'purge': log("Cache purged.", "var(--warning)"); break;
-        
         default: log("Unknown command.", "var(--danger)");
     }
 }
@@ -369,6 +344,40 @@ if(cmdIn) {
         }
     });
 }
+
+// --- 6. FAKE ADMIN PANEL LOGIC ---
+
+// Traffic slider update
+const trRange = document.getElementById('traffic-range');
+const trVal = document.getElementById('traffic-val');
+if(trRange && trVal) {
+    trRange.addEventListener('input', (e) => {
+        trVal.innerText = e.target.value + "%";
+    });
+}
+
+// Simulated Server Logs
+function addServerLog() {
+    const logBox = document.getElementById('server-logs');
+    if(!logBox || logBox.style.display === 'none') return;
+    
+    const actions = ["[INFO] Auth check", "[WARN] High latency", "[INFO] DB Sync", "[INFO] User connected", "[ERR] Packet loss"];
+    const ips = ["192.168.0.4", "10.0.0.5", "172.16.8.9"];
+    
+    const now = new Date();
+    const time = now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0') + ":" + now.getSeconds().toString().padStart(2,'0');
+    
+    const action = actions[Math.floor(Math.random() * actions.length)];
+    const ip = ips[Math.floor(Math.random() * ips.length)];
+    
+    const div = document.createElement('div');
+    div.className = "log-line";
+    div.innerHTML = `<span class="l-time">${time}</span> ${action} from ${ip}`;
+    
+    logBox.prepend(div);
+    if(logBox.children.length > 20) logBox.lastChild.remove();
+}
+setInterval(addServerLog, 3000); // Add a log every 3 sec
 
 // --- 7. UTILS & NAVIGATION ---
 
@@ -414,17 +423,13 @@ function toggleSidebar() {
     if(sb) sb.classList.toggle('open');
 }
 
-// === UPDATED SWITCH TAB (FORCE LOAD) ===
 function switchTab(id, btn) {
-    // 1. Убираем активные классы со всего
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     
-    // 2. Включаем нужную панель
     const panel = document.getElementById(id);
     if(panel) panel.classList.add('active');
     
-    // 3. Подсвечиваем кнопку
     if(btn) {
         btn.classList.add('active');
     } else {
@@ -434,39 +439,23 @@ function switchTab(id, btn) {
         if(id === 'term') btns[2].classList.add('active');
     }
     
-    // --- ADMIN PANEL LOGIC ---
     if(id === 'control') {
         const adminView = document.getElementById('admin-view');
         const lockedView = document.getElementById('locked-view');
-        const frame = document.getElementById('site-frame');
-
-        // Проверяем роль (admin или vip - на твой выбор, сейчас стоит admin)
+        
         if(userRole === 'admin') {
-            // >> ДОСТУП РАЗРЕШЕН
             lockedView.style.display = 'none';
-            adminView.style.display = 'flex';
-            
-            console.log(">> SYSTEM: Initializing Main Control Link...");
-            
-            // ПРИНУДИТЕЛЬНАЯ ЗАГРУЗКА (FORCE LOAD)
-            // Мы убрали проверку (!frame.src), теперь он будет обновлять сайт при каждом клике.
-            // Это гарантирует, что картинка появится.
-            frame.src = "https://voxtek-site.vercel.app"; 
-            
+            adminView.style.display = 'flex'; // Use flex now for column layout
         } else {
-            // >> ДОСТУП ЗАПРЕЩЕН
             adminView.style.display = 'none';
             lockedView.style.display = 'flex';
-            if(frame) frame.src = "about:blank"; // Очищаем канал для безопасности
         }
     }
 
-    // Мобильное меню
     if(window.innerWidth <= 900) {
         const sb = document.getElementById('sidebar');
         if(sb) sb.classList.remove('open');
     }
 }
 
-// START AS GUEST
 setProfileUI({ name: guestName, role: 'guest' });
