@@ -8,18 +8,18 @@ const firebaseConfig = {
     appId: "1:137141100080:web:1b798f2e7aa12a313cd7f5"
   };
 
-// --- 2. INITIALIZATION ---
+// --- 2. INITIALIZATION & SESSION ---
 let db, auth;
 let currentUser = null;
 let userDocRef = null;
+const sessionID = "SES-" + Math.floor(Math.random() * 1000000); // Unique Session ID
 
-// Fake File System for "ls" command
-const fileSystem = {
-    "config.sys": "[ENCRYPTED BINARY DATA]",
-    "users.dat": "root:x:0:0:root:/root:/bin/bash",
-    "network.log": "Connection established: Node-44 [SECURE]",
-    "manifesto.txt": "VoxTek Enterprises: Innovating for a controlled future."
+// Dynamic Viewport Height for Mobile
+const setAppHeight = () => {
+    document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
 };
+window.addEventListener('resize', setAppHeight);
+setAppHeight();
 
 try {
     firebase.initializeApp(firebaseConfig);
@@ -32,7 +32,39 @@ try {
     document.getElementById('net-stat').style.color = "var(--danger)";
 }
 
-// --- 3. AUTHENTICATION LOGIC ---
+// --- 3. ADVANCED LOGGING SYSTEM ---
+// Sends structured logs to Firebase 'system_logs' collection
+function systemLog(type, message, details = {}) {
+    if (!db || !currentUser) return; // Can't log if not connected
+
+    const logEntry = {
+        session_id: sessionID,
+        uid: currentUser.uid,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+        type: type, // 'INFO', 'WARN', 'ERROR', 'CMD'
+        message: message,
+        device: {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            screen: `${window.screen.width}x${window.screen.height}`
+        },
+        ...details
+    };
+
+    // Fire and forget (don't await)
+    db.collection('system_logs').add(logEntry).catch(err => console.error("Log failed:", err));
+    
+    // Also show in local console
+    console.log(`[${type}] ${message}`, details);
+}
+
+// Global Error Trap
+window.onerror = function(msg, url, line) {
+    systemLog('ERROR', 'Global JS Error', { error: msg, location: `${url}:${line}` });
+    return false;
+};
+
+// --- 4. AUTHENTICATION LOGIC ---
 
 auth.onAuthStateChanged((user) => {
     if (user) {
@@ -45,7 +77,9 @@ auth.onAuthStateChanged((user) => {
         loadUserProfile(user.uid);
         updatePresence("ONLINE");
         listenToNetwork();
+        
         log(">> CONNECTION ESTABLISHED. WELCOME USER.", "var(--success)");
+        systemLog('INFO', 'User Logged In');
     } else {
         document.getElementById('auth-modal').classList.add('active');
         currentUser = null;
@@ -63,21 +97,28 @@ document.getElementById('login-form').addEventListener('submit', (e) => {
     msg.style.color = "var(--warning)";
 
     auth.signInWithEmailAndPassword(email, pass)
+        .then(() => {
+            systemLog('INFO', 'Auth Successful');
+        })
         .catch((error) => {
             msg.innerText = "Error: " + error.message;
             msg.style.color = "var(--danger)";
+            systemLog('WARN', 'Auth Failed', { error: error.message });
         });
 });
 
 function logout() {
     if(userDocRef) {
-        userDocRef.update({ status: "OFFLINE" }).then(() => auth.signOut());
+        userDocRef.update({ status: "OFFLINE" }).then(() => {
+            systemLog('INFO', 'User Logout');
+            auth.signOut();
+        });
     } else {
         auth.signOut();
     }
 }
 
-// --- 4. PROFILE LOGIC ---
+// --- 5. PROFILE LOGIC ---
 
 function loadUserProfile(uid) {
     userDocRef = db.collection('users').doc(uid);
@@ -92,24 +133,23 @@ function loadUserProfile(uid) {
 
 function createDefaultProfile(uid) {
     const defName = "Unit-" + Math.floor(Math.random()*9999);
+    const osInfo = getOS();
     db.collection('users').doc(uid).set({
         uid: uid,
         name: defName,
         role: "user",
         avatar: "https://via.placeholder.com/100/000000/00f0ff?text=" + defName.charAt(0),
         status: "ONLINE",
-        device: getOS(),
+        device: osInfo,
         lastSeen: firebase.firestore.FieldValue.serverTimestamp()
     });
+    systemLog('INFO', 'Profile Created', { name: defName });
 }
 
 function renderSidebarProfile(data) {
     document.getElementById('user-name').innerText = data.name || "Unknown";
-    
-    // Set Avatar
     document.getElementById('user-avatar').src = data.avatar || "https://via.placeholder.com/100";
     
-    // Set Role Styles
     const ring = document.getElementById('user-role-ring');
     const badge = document.getElementById('user-role-badge');
     const roleText = document.getElementById('user-role-text');
@@ -151,9 +191,10 @@ setInterval(() => {
     if(userDocRef) userDocRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
 }, 60000);
 
-// --- 5. NETWORK LISTENER ---
+// --- 6. NETWORK LISTENER ---
 
 function listenToNetwork() {
+    // Show only users online in last 5 min (logic handled by status usually, but for now exact match)
     db.collection('users').where('status', '==', 'ONLINE')
         .onSnapshot((snapshot) => {
             const grid = document.getElementById('users-grid');
@@ -181,13 +222,11 @@ function listenToNetwork() {
         });
 }
 
-// --- 6. TERMINAL ENGINE (FULL FEATURES) ---
+// --- 7. TERMINAL ENGINE ---
 
 const cmdIn = document.getElementById('cmd-in');
 const termOut = document.getElementById('term-output');
 const termBox = document.getElementById('term-box');
-let cmdHistory = [];
-let historyIndex = -1;
 let activeProcessTimers = [];
 
 // Helper: Schedule log
@@ -205,6 +244,7 @@ function killProcess() {
         activeProcessTimers.forEach(clearTimeout);
         activeProcessTimers = [];
         log("^C", "var(--danger)");
+        systemLog('CMD', 'Process Killed');
         return true;
     }
     return false;
@@ -214,6 +254,9 @@ function processCommand(raw) {
     const parts = raw.split(' ');
     const cmd = parts[0].toLowerCase();
     const arg = parts.slice(1).join(' ');
+
+    // Log command execution
+    systemLog('CMD', `Executed: ${cmd}`, { args: arg });
 
     switch(cmd) {
         case 'help':
@@ -231,9 +274,9 @@ function processCommand(raw) {
 
         case 'ls':
             log("Directory of /root/systems:", "var(--text-muted)");
-            for (const [file, content] of Object.entries(fileSystem)) {
-                log(`  ${file}`, "#fff");
-            }
+            log("  config.sys [ENCRYPTED]", "#fff");
+            log("  users.dat", "#fff");
+            log("  network.log", "#fff");
             break;
 
         case 'sysinfo':
@@ -290,7 +333,6 @@ function log(txt, col="#aaa", isInput=false) {
     const d = document.createElement('div');
     d.className = 'term-row';
     
-    // Resolve CSS Vars for JS
     let colorCode = col;
     if(col.includes('primary')) colorCode = '#00f0ff';
     if(col.includes('danger')) colorCode = '#ff3333';
@@ -309,18 +351,14 @@ function log(txt, col="#aaa", isInput=false) {
     termBox.scrollTop = termBox.scrollHeight;
 }
 
-// Input Handlers
 cmdIn.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         const val = cmdIn.value.trim();
         if(!val) return;
-        cmdHistory.push(val);
-        historyIndex = cmdHistory.length;
         log(val, '#fff', true);
         processCommand(val);
         cmdIn.value = '';
     }
-    // Ctrl+C
     if (e.ctrlKey && e.key === 'c') {
         if(killProcess()) {
             e.preventDefault();
@@ -328,24 +366,13 @@ cmdIn.addEventListener('keydown', (e) => {
             cmdIn.value = '';
         }
     }
-    // Ctrl+L
     if (e.ctrlKey && e.key === 'l') {
         e.preventDefault();
         termOut.innerHTML = '';
     }
-    // Arrows
-    if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        if(historyIndex > 0) { historyIndex--; cmdIn.value = cmdHistory[historyIndex]; }
-    }
-    if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        if(historyIndex < cmdHistory.length - 1) { historyIndex++; cmdIn.value = cmdHistory[historyIndex]; }
-        else { historyIndex = cmdHistory.length; cmdIn.value = ''; }
-    }
 });
 
-// --- 7. UTILS & INIT ---
+// --- 8. UTILS & INIT ---
 
 function getOS() {
     const ua = navigator.userAgent;
@@ -353,15 +380,14 @@ function getOS() {
     if(ua.includes("Win")) return "Windows NT";
     if(ua.includes("Mac")) return "macOS";
     if(ua.includes("Linux")) return "Linux";
+    if(ua.includes("iPhone")) return "iOS";
     return "Unknown Terminal";
 }
 
-// System Stats
 function initSys() {
     const saved = localStorage.getItem('cc_host');
     const os = getOS();
     document.getElementById('host-name').innerText = saved || (os.includes("Win") ? "CyberChronos 14 Pro" : "OnePlus 10 Pro");
-    document.getElementById('os-tag').innerText = os.toUpperCase();
 }
 
 // Battery
@@ -413,6 +439,8 @@ function switchTab(id, btn) {
 
 // Init
 initSys();
+// Auto focus logic for desktop
 document.addEventListener('click', () => {
-    if(document.getElementById('term').classList.contains('active')) cmdIn.focus();
+    // Only focus if we are on desktop to avoid popping virtual keyboard on mobile
+    if(window.innerWidth > 900 && document.getElementById('term').classList.contains('active')) cmdIn.focus();
 });
