@@ -2,219 +2,470 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#020202">
-    <title>CyberChronos OS v19.0 [Overwatch]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberChronos OS v13.0 [Full Stack] | VoxTek Systems</title>
     
-    <link rel="stylesheet" href="styles.css">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
-
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+    <style>
+        /* =========================================
+           1. CORE VARIABLES & FONTS
+           ========================================= */
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500&family=Rajdhani:wght@400;500;600;700&display=swap');
+
+        :root {
+            --primary: #00f0ff;
+            --primary-dim: rgba(0, 240, 255, 0.1);
+            --primary-glow: rgba(0, 240, 255, 0.4);
+            --bg-deep: #020202;
+            --panel-bg: rgba(10, 15, 20, 0.92);
+            --border: rgba(0, 240, 255, 0.25);
+            
+            --danger: #ff3333;
+            --success: #00ff9d;
+            --warning: #ffcc00;
+            
+            --text-main: #e0f0ff;
+            --text-muted: #8b9bb4;
+            
+            --font-code: 'Fira Code', monospace;
+            --font-ui: 'Rajdhani', sans-serif;
+            
+            --sidebar-width: 280px;
+        }
+
+        /* =========================================
+           2. GLOBAL RESET & BASE STYLES
+           ========================================= */
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            outline: none; 
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent; 
+        }
+        
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            /* Advanced Grid Background */
+            background-image: 
+                linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #050505; border-left: 1px solid #222; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border: 1px solid #000; }
+        ::-webkit-scrollbar-thumb:hover { background: #fff; }
+
+        /* =========================================
+           3. NAVIGATION & SIDEBAR
+           ========================================= */
+        .top-nav {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            display: flex; align-items: center; padding: 0 20px;
+            z-index: 200; pointer-events: none;
+        }
+        
+        .menu-toggle {
+            pointer-events: auto;
+            background: rgba(0,0,0,0.7); 
+            border: 1px solid var(--border);
+            color: var(--primary); padding: 10px 14px;
+            cursor: pointer; font-size: 1.4rem; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        .menu-toggle:hover { 
+            background: var(--primary); color: #000; 
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+        .menu-toggle:focus-visible { outline: 2px solid #fff; }
+
+        .sidebar {
+            position: fixed; top: 0; left: 0; height: 100%; width: var(--sidebar-width);
+            background: rgba(5, 8, 12, 0.98);
+            border-right: 1px solid var(--border);
+            padding: 80px 25px 30px 25px;
+            display: flex; flex-direction: column;
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            backdrop-filter: blur(20px); z-index: 150;
+            transform: translateX(0);
+            box-shadow: 10px 0 40px rgba(0,0,0,0.6);
+        }
+        
+        .sidebar.closed { transform: translateX(-100%); }
+
+        .brand { margin-bottom: 50px; border-left: 4px solid var(--primary); padding-left: 20px; }
+        .brand h1 { 
+            font-size: 1.6rem; text-transform: uppercase; letter-spacing: 2px; color: #fff;
+            text-shadow: 0 0 10px var(--primary-glow); margin-bottom: 5px;
+        }
+        .brand span { font-size: 0.7rem; color: var(--text-muted); display: block; font-family: var(--font-code); letter-spacing: 1px; }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; }
+        .nav-btn {
+            padding: 14px 18px; background: transparent; border: 1px solid transparent;
+            color: var(--text-muted); cursor: pointer; text-align: left;
+            font-family: var(--font-ui); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px;
+            transition: all 0.3s ease; display: flex; align-items: center; gap: 15px; border-radius: 0;
+            font-weight: 600;
+        }
+        .nav-btn:hover { 
+            color: #fff; 
+            background: linear-gradient(90deg, rgba(0,240,255,0.1) 0%, transparent 100%);
+            border-left: 2px solid var(--primary);
+            padding-left: 25px;
+        }
+        .nav-btn:focus-visible { outline: 1px solid var(--primary); }
+        .nav-btn.active { 
+            background: var(--primary-dim); color: var(--primary); 
+            border: 1px solid var(--border);
+            box-shadow: inset 0 0 20px rgba(0,240,255,0.05);
+        }
+
+        /* =========================================
+           4. MAIN CONTENT AREA
+           ========================================= */
+        .main-viewport {
+            flex: 1; padding: 80px 40px 40px 40px;
+            overflow-y: auto; margin-left: var(--sidebar-width);
+            transition: margin-left 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        .main-viewport.expanded { margin-left: 0; }
+        
+        .panel { display: none; animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .panel.active { display: block; }
+
+        h2 {
+            font-size: 2rem; border-bottom: 1px solid var(--border);
+            padding-bottom: 20px; margin-bottom: 30px; color: #fff;
+            display: flex; justify-content: space-between; align-items: center;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .meta-tag { 
+            font-family: var(--font-code); font-size: 0.75rem; color: var(--primary); 
+            background: rgba(0,240,255,0.05); padding: 6px 10px; border: 1px solid var(--border);
+        }
+
+        /* =========================================
+           5. WIDGETS & CARDS
+           ========================================= */
+        .grid-layout { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 25px; margin-bottom: 35px; }
+        
+        .card {
+            background: var(--panel-bg); 
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 25px; position: relative;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
+            transform: translateY(-3px);
+            background: linear-gradient(145deg, rgba(12, 18, 24, 0.95) 0%, rgba(0, 240, 255, 0.05) 100%);
+        }
+        
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 2px; height: 100%;
+            background: var(--primary); opacity: 0; transition: 0.3s;
+        }
+        .card:hover::before { opacity: 1; }
+
+        .card-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+        .card-value { font-size: 1.8rem; font-family: var(--font-code); color: #fff; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
+        .card-sub { font-size: 0.75rem; margin-top: 8px; font-family: var(--font-code); opacity: 0.8; }
+
+        /* --- USERS GRID (FIREBASE) --- */
+        .users-section { margin-bottom: 35px; }
+        .users-header {
+            font-size: 1rem; color: #fff; border-bottom: 1px solid #333; 
+            padding-bottom: 10px; margin-bottom: 15px; 
+            text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: space-between;
+        }
+        .users-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;
+        }
+        .user-node {
+            border: 1px solid #333; background: rgba(0,0,0,0.4); padding: 15px;
+            display: flex; flex-direction: column; gap: 5px; transition: 0.3s;
+            position: relative;
+        }
+        .user-node:hover { border-color: var(--success); background: rgba(0, 255, 157, 0.05); }
+        .user-node.me { border-color: var(--primary); background: rgba(0, 240, 255, 0.05); }
+        
+        .u-name { color: #fff; font-weight: bold; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .u-status { font-size: 0.7rem; font-family: var(--font-code); color: var(--success); display: flex; align-items: center; gap: 6px; }
+        .u-device { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; margin-top: auto; }
+        .pulse-dot { width: 6px; height: 6px; background: var(--success); border-radius: 50%; box-shadow: 0 0 5px var(--success); }
+
+        /* =========================================
+           6. INFO & LORE SECTION
+           ========================================= */
+        .info-section {
+            margin-bottom: 35px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px;
+        }
+        .text-panel {
+            background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.05); 
+            padding: 25px; transition: 0.3s;
+        }
+        .text-panel:hover { border-color: var(--border); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+
+        .text-panel h3 {
+            font-size: 1.1rem; color: #fff; margin-bottom: 15px;
+            text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #333; padding-bottom: 10px;
+        }
+        .text-panel p {
+            font-size: 0.9rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 15px; text-align: justify;
+        }
+        .feature-list { display: flex; flex-direction: column; gap: 10px; }
+        .f-item {
+            background: rgba(255, 255, 255, 0.03); padding: 12px;
+            display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: #e0e0e0;
+            border-left: 2px solid transparent; transition: 0.2s;
+        }
+        .f-item:hover { background: rgba(255,255,255,0.07); border-left-color: var(--success); }
+        
+        .f-tag {
+            font-family: var(--font-code); font-size: 0.7rem; color: var(--primary); 
+            background: rgba(0, 240, 255, 0.1); padding: 3px 8px; border-radius: 2px;
+        }
+
+        /* =========================================
+           7. VISUALIZERS
+           ========================================= */
+        .net-monitor {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); padding: 25px;
+            transition: 0.3s;
+        }
+        .net-monitor:hover { border-color: var(--primary); }
+        .bars-container { display: flex; align-items: flex-end; gap: 5px; height: 70px; width: 100%; }
+        .bar { 
+            flex: 1; background: var(--primary); opacity: 0.15; 
+            transition: height 0.6s ease-in-out, background-color 0.6s; 
+        }
+
+        /* =========================================
+           8. TERMINAL INTERFACE
+           ========================================= */
+        .term-wrapper {
+            width: 100%; height: 600px;
+            background: #08090a; border: 1px solid #333;
+            display: flex; flex-direction: column;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            transition: border-color 0.3s;
+        }
+        .term-wrapper:hover { border-color: #444; }
+
+        .term-header {
+            background: #111; border-bottom: 1px solid #333;
+            padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+        }
+        .term-dot { width: 12px; height: 12px; border-radius: 50%; background: #333; }
+        
+        .terminal-box {
+            flex: 1; padding: 20px;
+            font-family: var(--font-code); font-size: 0.95rem; 
+            overflow-y: auto; color: #d0d0d0;
+            background: radial-gradient(circle at center, #0a0c0e 0%, #000 100%);
+        }
+        .terminal-box:focus { outline: none; }
+
+        .term-row { margin-bottom: 6px; line-height: 1.5; word-wrap: break-word; display: block; }
+        .term-time { color: #555; margin-right: 12px; font-size: 0.8rem; user-select: none; }
+        
+        .input-row { display: flex; align-items: center; margin-top: 15px; color: #fff; }
+        .prompt { color: var(--success); margin-right: 12px; font-weight: bold; }
+        .cmd-input { 
+            background: transparent; border: none; color: #fff; flex: 1; 
+            font-family: var(--font-code); font-size: 0.95rem; padding: 0;
+            caret-color: var(--primary);
+        }
+
+        /* =========================================
+           9. FOOTER
+           ========================================= */
+        .sys-footer {
+            position: fixed; bottom: 0; right: 0; width: 100%;
+            background: rgba(2, 2, 2, 0.95); border-top: 1px solid #222;
+            padding: 8px 25px; font-family: var(--font-code); font-size: 0.7rem; color: #666;
+            display: flex; justify-content: flex-end; gap: 25px; z-index: 300;
+            backdrop-filter: blur(5px);
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* A11y Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; }
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); width: 280px; box-shadow: 5px 0 20px rgba(0,0,0,0.8); }
+            .sidebar.open { transform: translateX(0); }
+            .main-viewport { margin-left: 0; padding: 70px 20px 40px 20px; }
+            .menu-toggle { display: flex; }
+            .grid-layout { grid-template-columns: 1fr; }
+        }
+        @media (min-width: 901px) {
+            .sidebar.closed { transform: translateX(-280px); }
+        }
+    </style>
 </head>
 <body>
 
-    <div id="auth-modal" class="modal-overlay">
-        <div class="auth-box">
-            <div class="auth-header">
-                <h3>VOXTEK IDENTITY</h3>
-                <p>Secure Link Required</p>
-            </div>
-            <form id="login-form">
-                <input type="email" id="email" placeholder="CODENAME (EMAIL)" required class="auth-input">
-                <input type="password" id="password" placeholder="ACCESS KEY (PASSWORD)" required class="auth-input">
-                <button type="submit" class="auth-btn">ESTABLISH LINK</button>
-            </form>
-            <button class="auth-btn-close" onclick="toggleLoginModal()">CANCEL CONNECTION</button>
-            <div class="auth-footer" id="auth-msg">Standby...</div>
-        </div>
-    </div>
-
     <nav class="top-nav">
-        <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle Menu" id="menuBtn">☰</button>
-        <div class="top-status">
-            <span class="desktop-only">UID: <span id="header-uid" style="color:var(--primary)">GUEST</span> | </span>
-            NET: <span id="net-stat" style="color:var(--success)">OPEN</span>
-        </div>
+        <button class="menu-toggle" onclick="toggleSidebar()" aria-label="Toggle Main Menu" aria-expanded="true" id="menuBtn">
+            ☰
+        </button>
     </nav>
 
     <aside class="sidebar" id="sidebar">
         <div class="brand">
             <h1>CyberChronos</h1>
-            <span>SYSTEM v19.0</span>
+            <span>SYSTEM v13.0 [FULL STACK]</span>
         </div>
-
-        <div class="user-profile-widget">
-            <div class="avatar-wrapper">
-                <div class="avatar-ring role-guest" id="user-role-ring">
-                    <img id="user-avatar" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiMwNTA1MDUiLz48dGV4dCB4PSI1MCIgeT0iNTUiIGZvbnQtZmFtaWx5PSJtb25vc3BhY2UiIGZvbnQtc2l6ZT0iNTAiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjMDBmMGZmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj4/PC90ZXh0Pjwvc3ZnPg==" alt="Avatar">
-                </div>
-                <div class="role-badge" id="user-role-badge">CITIZEN</div>
-            </div>
-            <div class="user-info">
-                <div class="u-name" id="user-name">Citizen-0000</div>
-                <div class="u-id" id="user-role-text">Unregistered Entity</div>
-            </div>
-        </div>
-
         <nav class="nav-menu">
-            <button class="nav-btn active" onclick="switchTab('dash', this)">SYSTEM STATUS</button>
-            <button class="nav-btn" onclick="switchTab('control', this)">VOXTEK OVERWATCH</button>
-            <button class="nav-btn" onclick="switchTab('term', this)">TERMINAL</button>
-            <div class="nav-sep"></div>
-            <button class="nav-btn auth-toggle-btn" id="authBtn" onclick="handleAuthClick()">CONNECT LINK</button>
+            <button class="nav-btn active" onclick="switchTab('dash', this)">
+                SYSTEM STATUS
+            </button>
+            <button class="nav-btn" onclick="switchTab('term', this)">
+                TERMINAL
+            </button>
+            <button class="nav-btn" onclick="window.open('https://voxtek-site.vercel.app', '_blank')">
+                VOXTEK LINK
+            </button>
         </nav>
+        
+        <div style="margin-top: auto; font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-code);">
+            UID: <span id="user-uid">CONNECTING...</span><br>
+            NET: <span id="net-status" style="color:var(--warning)">INITIALIZING</span>
+        </div>
     </aside>
 
     <main class="main-viewport" id="viewport">
         
         <section id="dash" class="panel active">
-            <h2>Overview <span class="meta-tag" id="os-tag">DETECTING...</span></h2>
+            <h2>
+                System Overview
+                <span class="meta-tag" id="os-tag">DETECTING...</span>
+            </h2>
 
             <div class="grid-layout">
                 <div class="card">
-                    <div class="card-label">Identity</div>
-                    <div class="card-value" id="host-name">Guest Node</div>
-                    <div class="card-sub" style="color: var(--warning);">LOCAL ACCESS ONLY</div>
+                    <div class="card-label">Machine ID</div>
+                    <div class="card-value" id="host-name">Unknown</div>
+                    <div class="card-sub" style="color: var(--success);">VOXTEK CLOUD SYNCED</div>
                 </div>
+
                 <div class="card">
-                    <div class="card-label">Global Nodes</div>
+                    <div class="card-label">Active Nodes</div>
                     <div class="card-value" id="active-count">0</div>
-                    <div class="card-sub">VOXTEK NETWORK</div>
+                    <div class="card-sub">GLOBAL NETWORK</div>
                 </div>
+
                 <div class="card">
-                    <div class="card-label">Power Core</div>
+                    <div class="card-label">Energy Core</div>
                     <div class="card-value" id="batt-val">--%</div>
                     <div class="card-sub" id="batt-status">Scanning...</div>
                 </div>
             </div>
 
             <div class="users-section">
-                <div class="users-header">Active Neural Links [LIVE]</div>
+                <div class="users-header">
+                    <span>Active Neural Links [VOXTEK ENTERPRISES]</span>
+                    <span id="sync-icon" style="color:var(--success)">● LIVE</span>
+                </div>
                 <div class="users-grid" id="users-grid">
-                    <div style="padding:10px; color:#666; font-size:0.8rem; font-family:var(--font-code);">
-                        >> ACCESS DENIED. LOGIN REQUIRED TO VIEW GLOBAL NETWORK.
+                    <div style="color:#666; font-family:var(--font-code); font-size:0.8rem; padding:10px;">
+                        Waiting for secure handshake...
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="text-panel">
+                    <h3>:: CyberChronos Technologies</h3>
+                    <p>
+                        Founded as a strategic division of <strong>VoxTek Enterprises</strong>, CyberChronos is dedicated to the development of zero-latency operating environments. 
+                        Our kernel architecture eliminates the delay between user intent and digital execution.
+                    </p>
+                    <p>
+                        Version 13.0 utilizes the advanced <em>"Neuro-Sync"</em> protocol, allowing seamless integration with bio-digital implants and high-frequency surveillance grids. 
+                        Trust in stability. Trust in VoxTek.
+                    </p>
+                    <div style="font-family: var(--font-code); font-size: 0.75rem; color: var(--primary); margin-top: 10px;">
+                        >> STATUS: MARKET DOMINANCE ACHIEVED
+                    </div>
+                </div>
+
+                <div class="text-panel" style="border-left-color: var(--success);">
+                    <h3>:: Core Modules</h3>
+                    <div class="feature-list">
+                        <div class="f-item">
+                            <span>Vox-Encryption Standard (AES-4096)</span>
+                            <span class="f-tag">ACTIVE</span>
+                        </div>
+                        <div class="f-item">
+                            <span>Neuro-Sync Kernel v13.0</span>
+                            <span class="f-tag">ACTIVE</span>
+                        </div>
+                        <div class="f-item">
+                            <span>Global Surveillance Uplink</span>
+                            <span class="f-tag">STANDBY</span>
+                        </div>
+                        <div class="f-item">
+                            <span>Ad-Revenue Optimization</span>
+                            <span class="f-tag">MAXIMIZED</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="net-monitor">
-                <div class="card-label">Encrypted Data Stream</div>
+                <div class="card-label">Encrypted Data Stream [Live]</div>
                 <div class="bars-container" id="visualizer"></div>
             </div>
         </section>
 
-        <section id="control" class="panel">
-            <h2>Overwatch Control <span class="meta-tag" style="background:var(--danger); color:black;">ADMIN ONLY</span></h2>
-            
-            <div id="admin-view" class="secure-wrapper" style="display:none;">
-                <div class="secure-header">
-                    <div class="secure-indicator">
-                        <div class="led-blink"></div>
-                        <span>CONNECTED TO: voxtek-site.vercel.app [CORE]</span>
-                    </div>
-                    <div style="font-family: var(--font-code); color: var(--success);">PING: 12ms</div>
-                </div>
-
-                <div class="control-grid">
-                    <div class="c-widget large">
-                        <div class="w-head">SERVER INTEGRITY</div>
-                        <div class="server-status-box">
-                            <div class="status-circle" id="srv-circle">
-                                <span id="srv-text">OK</span>
-                            </div>
-                            <div class="status-details">
-                                <div>UPTIME: <span style="color:white">99.9%</span></div>
-                                <div>LOAD: <span style="color:var(--primary)">14%</span></div>
-                                <div>TEMP: <span style="color:var(--success)">34°C</span></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="c-widget">
-                        <div class="w-head">SECURITY PROTOCOLS</div>
-                        <div class="switch-row">
-                            <span>FIREWALL</span>
-                            <label class="cyber-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="switch-row">
-                            <span>ANTI-DDOS</span>
-                            <label class="cyber-switch">
-                                <input type="checkbox" checked>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="switch-row">
-                            <span>GHOST MODE</span>
-                            <label class="cyber-switch">
-                                <input type="checkbox">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="c-widget">
-                        <div class="w-head">TRAFFIC LIMITER</div>
-                        <div class="slider-container">
-                            <input type="range" min="0" max="100" value="80" class="cyber-range" id="traffic-range">
-                            <div class="range-val" id="traffic-val">80%</div>
-                        </div>
-                        <div style="margin-top:10px; font-size:0.7rem; color:#666;">
-                            LIMITING BANDWIDTH SAVES POWER BUT INCREASES LATENCY.
-                        </div>
-                    </div>
-
-                    <div class="c-widget">
-                        <div class="w-head">EMERGENCY ACTIONS</div>
-                        <div class="action-btn-grid">
-                            <button class="act-btn" onclick="log('>> FLUSHING DNS CACHE...', 'var(--warning)')">FLUSH DNS</button>
-                            <button class="act-btn" onclick="log('>> RESTARTING PODS...', 'var(--primary)')">REBOOT</button>
-                            <button class="act-btn danger" onclick="alert('ARE YOU SURE YOU WANT TO INITIATE LOCKDOWN?')">LOCKDOWN</button>
-                        </div>
-                    </div>
-
-                    <div class="c-widget wide">
-                        <div class="w-head">LIVE SERVER LOGS</div>
-                        <div class="log-window" id="server-logs">
-                            <div class="log-line"><span class="l-time">14:02:01</span> [INFO] Connection accepted from 192.168.0.1</div>
-                            <div class="log-line"><span class="l-time">14:02:05</span> [WARN] High latency detected in Sector 7</div>
-                            <div class="log-line"><span class="l-time">14:03:12</span> [INFO] User "Angel_Dust" authorized</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="locked-view" class="lock-screen">
-                <div class="lock-icon">🔒</div>
-                <h3>ACCESS DENIED</h3>
-                <p>This Control Panel is reserved for VoxTek Administrators only.</p>
-                <div class="lock-code">ERR_CODE: 403_FORBIDDEN_ENTITY</div>
-            </div>
-        </section>
-
         <section id="term" class="panel">
-            <h2>Command Interface <span class="meta-tag">GUEST</span></h2>
+            <h2>
+                Command Interface
+                <span class="meta-tag">ROOT ACCESS</span>
+            </h2>
+            
             <div class="term-wrapper">
                 <div class="term-header">
-                    <div class="term-dot red"></div>
-                    <div class="term-dot yellow"></div>
-                    <div class="term-dot green"></div>
-                    <span style="margin-left:auto; color:#666">bash — public_access</span>
+                    <div class="term-dot" style="background:#ff5f56"></div>
+                    <div class="term-dot" style="background:#ffbd2e"></div>
+                    <div class="term-dot" style="background:#27c93f"></div>
+                    <span style="margin-left:auto; font-size:0.8rem; color:#666">bash — vox_cloud_shell</span>
                 </div>
-                <div class="terminal-box" id="term-box" role="log" aria-live="polite">
-                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v19.0 [Public]</div>
-                    <div class="term-row">Login as: Guest (Citizen)</div>
+                
+                <div class="terminal-box" id="term-box" role="log" aria-live="polite" aria-relevant="additions" aria-atomic="false">
+                    <div class="term-row" style="color:var(--primary)">VoxTek Secure Kernel v13.0 (Firebase Connected)</div>
+                    <div class="term-row">Login: root_admin verified.</div>
+                    <div class="term-row">Syncing with VoxTek Enterprises database... OK.</div>
                     <div class="term-row">Type 'help' to see available commands.</div>
                     <br>
                     <div id="term-output"></div>
                     <div class="input-row">
-                        <span class="prompt" id="term-prompt">guest@cyberchronos:~#</span>
-                        <input type="search" class="cmd-input" id="cmd-in" autocomplete="off" spellcheck="false" enterkeyhint="go">
+                        <span class="prompt">root@cyberchronos:~#</span>
+                        <input type="text" class="cmd-input" id="cmd-in" autocomplete="off" spellcheck="false" aria-label="Terminal Input">
                     </div>
                 </div>
             </div>
@@ -223,10 +474,462 @@
     </main>
 
     <footer class="sys-footer">
-        <span>MEM: <span id="ram-val">4096</span>MB</span>
+        <span>DB: <span id="db-status" style="color:var(--warning)">CONNECTING</span></span>
         <span>UPTIME: <span id="uptime">00:00</span></span>
     </footer>
 
-    <script src="scripts.js"></script>
+    <script>
+        /* =========================================
+           1. FIREBASE CONFIGURATION
+           ========================================= */
+        const firebaseConfig = {
+            apiKey: "AIzaSyDaYxxhxjrvjVgqYcvPH53989Wr5dMgqHI",
+            authDomain: "voxtek-system.firebaseapp.com",
+            projectId: "voxtek-system",
+            storageBucket: "voxtek-system.firebasestorage.app",
+            messagingSenderId: "137141100080",
+            appId: "1:137141100080:web:1b798f2e7aa12a313cd7f5"
+        };
+
+        /* =========================================
+           2. FIREBASE INITIALIZATION
+           ========================================= */
+        let db, auth;
+        let currentUser = null;
+        let myDocRef = null;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            auth = firebase.auth();
+            document.getElementById('db-status').innerText = "ONLINE";
+            document.getElementById('db-status').style.color = "var(--success)";
+            
+            // Start Auth
+            signInAnonymously();
+            
+        } catch (e) {
+            console.error("Firebase Init Error:", e);
+            document.getElementById('db-status').innerText = "CONFIG ERROR";
+            document.getElementById('db-status').style.color = "var(--danger)";
+        }
+
+        // --- Auth & Presence ---
+        function signInAnonymously() {
+            if(!auth) return;
+            auth.signInAnonymously()
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    const shortUid = currentUser.uid.substring(0,8).toUpperCase();
+                    document.getElementById('user-uid').innerText = shortUid;
+                    document.getElementById('net-status').innerText = "SECURE";
+                    document.getElementById('net-status').style.color = "var(--success)";
+                    
+                    updateUserPresence("ONLINE");
+                    listenToNetwork();
+                })
+                .catch((error) => {
+                    log("Auth Failed: " + error.message, "var(--danger)");
+                });
+        }
+
+        function updateUserPresence(status) {
+            if(!currentUser || !db) return;
+            const deviceName = localStorage.getItem('cc_host') || document.getElementById('host-name').innerText;
+            
+            myDocRef = db.collection('users').doc(currentUser.uid);
+            myDocRef.set({
+                uid: currentUser.uid,
+                name: deviceName,
+                device: navigator.platform,
+                status: status,
+                lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+        }
+
+        function listenToNetwork() {
+            if(!db) return;
+            // Listen for users active in last 5 minutes (implied by logic) or just status
+            db.collection('users').where('status', '==', 'ONLINE')
+                .onSnapshot((snapshot) => {
+                    const grid = document.getElementById('users-grid');
+                    grid.innerHTML = ''; 
+                    
+                    document.getElementById('active-count').innerText = snapshot.size;
+
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const isMe = (currentUser && data.uid === currentUser.uid);
+                        
+                        const card = document.createElement('div');
+                        card.className = 'user-node';
+                        if(isMe) card.classList.add('me');
+                        
+                        card.innerHTML = `
+                            <div class="u-name">${data.name || 'Anonymous'} ${isMe ? '(YOU)' : ''}</div>
+                            <div class="u-status"><div class="pulse-dot"></div> ONLINE</div>
+                            <div class="u-device">${data.device || 'Unknown System'}</div>
+                        `;
+                        grid.appendChild(card);
+                    });
+                });
+        }
+
+        // Heartbeat
+        setInterval(() => {
+            if(myDocRef) myDocRef.update({ lastSeen: firebase.firestore.FieldValue.serverTimestamp() });
+        }, 60000);
+
+        /* =========================================
+           3. UI LOGIC (SIDEBAR, TABS)
+           ========================================= */
+        const sidebar = document.getElementById('sidebar');
+        const viewport = document.getElementById('viewport');
+        const menuBtn = document.getElementById('menuBtn');
+        
+        if(window.innerWidth <= 900) sidebar.classList.remove('open');
+
+        function toggleSidebar() {
+            const isDesktop = window.innerWidth > 900;
+            if(isDesktop) {
+                sidebar.classList.toggle('closed');
+                viewport.classList.toggle('expanded');
+                menuBtn.setAttribute('aria-expanded', !sidebar.classList.contains('closed'));
+            } else {
+                sidebar.classList.toggle('open');
+                menuBtn.setAttribute('aria-expanded', sidebar.classList.contains('open'));
+            }
+        }
+        
+        function switchTab(id, btn) {
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
+            
+            if(window.innerWidth <= 900) sidebar.classList.remove('open');
+            if(id === 'term') setTimeout(() => document.getElementById('cmd-in').focus(), 100);
+        }
+
+        /* =========================================
+           4. SYSTEM SIMULATION (Battery, OS, Vis)
+           ========================================= */
+        function detectSys() {
+            const ua = navigator.userAgent;
+            let os = "Terminal";
+            if (ua.indexOf("Android") !== -1) os = "Android System";
+            else if (ua.indexOf("Win") !== -1) os = "Windows NT";
+            else if (ua.indexOf("Mac") !== -1) os = "macOS";
+            else if (ua.indexOf("Linux") !== -1) os = "Linux";
+            else if (ua.indexOf("iPhone") !== -1) os = "iOS";
+
+            document.getElementById('os-tag').innerText = os;
+            const saved = localStorage.getItem('cc_host');
+            const def = os.includes("Win") ? "Windows NT" : (os.includes("Android") ? "Android Device" : "Secure Workstation");
+            document.getElementById('host-name').innerText = saved || def;
+        }
+
+        function initBattery() {
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(b => {
+                    updateBatt(b);
+                    b.addEventListener('levelchange', () => updateBatt(b));
+                    b.addEventListener('chargingchange', () => updateBatt(b));
+                });
+            } else {
+                document.getElementById('batt-val').innerText = "AC";
+                document.getElementById('batt-status').innerText = "Hardwired";
+            }
+        }
+        function updateBatt(b) {
+            const pct = Math.round(b.level * 100) + "%";
+            document.getElementById('batt-val').innerText = pct;
+            document.getElementById('batt-status').innerText = b.charging ? "Charging" : "Discharging";
+        }
+
+        // Clock
+        setInterval(() => {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2,'0');
+            const m = String(now.getMinutes()).padStart(2,'0');
+            document.getElementById('uptime').innerText = `${h}:${m}`;
+        }, 1000);
+
+        // Visualizer
+        function initVis() {
+            const con = document.getElementById('visualizer');
+            for(let i=0; i<30; i++) {
+                let d = document.createElement('div');
+                d.className = 'bar';
+                con.appendChild(d);
+            }
+            setInterval(() => {
+                const bars = document.querySelectorAll('.bar');
+                bars.forEach(b => {
+                    const h = Math.floor(Math.random() * 90) + 10;
+                    b.style.height = h + "%";
+                    b.style.opacity = h > 80 ? 0.7 : 0.15;
+                });
+                const cpuElement = document.getElementById('cpu-val');
+                if (cpuElement) {
+                    cpuElement.innerText = (Math.floor(Math.random() * 15) + 5) + "%";
+                }
+            }, 800);
+        }
+
+        /* =========================================
+           5. ADVANCED TERMINAL LOGIC
+           ========================================= */
+        const cmdIn = document.getElementById('cmd-in');
+        const termOut = document.getElementById('term-output');
+        const termBox = document.getElementById('term-box');
+        
+        let cmdHistory = [];
+        let historyIndex = -1;
+        let activeProcessTimers = [];
+
+        // Simulated File System
+        const fileSystem = {
+            "config.sys": "[ENCRYPTED BINARY DATA]",
+            "users.dat": "root:x:0:0:root:/root:/bin/bash",
+            "network.log": "Connection established: Node-44 [SECURE]",
+            "manifesto.txt": "VoxTek Enterprises: Innovating for a controlled future.",
+            "firebase.config": "Endpoint: voxtek-system.firebaseapp.com [ACTIVE]"
+        };
+
+        const availableCommands = ["help", "clear", "status", "whoami", "setname", "ls", "sysinfo", "netstat", "encrypt", "date", "purge"];
+
+        // Helper: Schedule task (for simulations)
+        function scheduleLog(fn, delay) {
+            const id = setTimeout(() => {
+                fn();
+                activeProcessTimers = activeProcessTimers.filter(t => t !== id);
+            }, delay);
+            activeProcessTimers.push(id);
+        }
+
+        // Helper: Ctrl+C
+        function killProcess() {
+            if (activeProcessTimers.length > 0) {
+                activeProcessTimers.forEach(clearTimeout);
+                activeProcessTimers = [];
+                log("^C", "var(--danger)");
+                return true;
+            }
+            return false;
+        }
+
+        // Command Processing
+        async function processCommand(raw) {
+            const parts = raw.split(' ');
+            const cmd = parts[0].toLowerCase();
+            const arg = parts.slice(1).join(' ');
+
+            // Cloud Logging
+            if(currentUser && db) {
+                try {
+                    db.collection('logs').add({
+                        uid: currentUser.uid,
+                        cmd: raw,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch(e) { console.log("Log error (offline)"); }
+            }
+
+            switch(cmd) {
+                case 'help':
+                    log("AVAILABLE COMMANDS:", "var(--primary)");
+                    log("  setname [name] - Update Identity in Cloud");
+                    log("  status    - System diagnostics");
+                    log("  ls        - List directory contents");
+                    log("  sysinfo   - Hardware details");
+                    log("  netstat   - Active network connections");
+                    log("  encrypt   - Run encryption test");
+                    log("  purge     - Clear cache memory");
+                    log("  whoami    - User privileges");
+                    log("  clear     - Clear terminal (or Ctrl+L)");
+                    break;
+                    
+                case 'clear':
+                    termOut.textContent = ''; 
+                    break;
+
+                case 'ls':
+                    log("Directory of /root/systems:", "var(--text-muted)");
+                    for (const [file, content] of Object.entries(fileSystem)) {
+                        log(`  ${file}`, "#fff");
+                    }
+                    break;
+
+                case 'status':
+                    log("[OK] KERNEL: ACTIVE");
+                    const dbState = document.getElementById('db-status').innerText;
+                    log(`[OK] FIREBASE LINK: ${dbState}`);
+                    log("[OK] UPLINK: STABLE (4ms)");
+                    break;
+
+                case 'sysinfo':
+                    log("HARDWARE PROFILE:");
+                    log(`  HOST: ${document.getElementById('host-name').innerText}`);
+                    log(`  OS: ${document.getElementById('os-tag').innerText}`);
+                    log("  CORES: 8 LOGICAL / 4 PHYSICAL");
+                    log("  ARCH: x64_vox_edition");
+                    break;
+                    
+                case 'netstat':
+                    log("Active Connections (TCP/IP):");
+                    log("  PROTO  LOCAL ADDR      FOREIGN ADDR    STATE", "var(--text-muted)");
+                    log("  TCP    127.0.0.1:443   10.0.0.5:8080   ESTABLISHED");
+                    log("  TCP    192.168.1.5     104.22.1.1:443  TIME_WAIT");
+                    break;
+
+                case 'encrypt':
+                    log("Initializing AES-4096 handshake...", "var(--warning)");
+                    scheduleLog(() => log(">> Generating keys...", "var(--text-muted)"), 500);
+                    scheduleLog(() => log(">> Hashing data blocks...", "var(--text-muted)"), 1200);
+                    scheduleLog(() => log(">> Verifying integrity...", "var(--text-muted)"), 2000);
+                    scheduleLog(() => log(">> ENCRYPTION COMPLETE.", "var(--success)"), 2800);
+                    break;
+
+                case 'date':
+                    log(new Date().toString());
+                    break;
+
+                case 'purge':
+                    log("Clearing buffer...", "var(--warning)");
+                    scheduleLog(() => log(">> Flushing cache...", "var(--text-muted)"), 600);
+                    scheduleLog(() => log(">> Releasing handles...", "var(--text-muted)"), 1200);
+                    scheduleLog(() => log(">> Memory released: 512MB", "var(--success)"), 1800);
+                    break;
+
+                case 'whoami':
+                    log(`UID: ${currentUser ? currentUser.uid : 'LOCAL_USER'}`);
+                    log("ROLE: Node Operator / Admin");
+                    break;
+
+                case 'setname':
+                    if(arg) {
+                        localStorage.setItem('cc_host', arg);
+                        document.getElementById('host-name').innerText = arg;
+                        
+                        // Sync to Cloud
+                        if(myDocRef) {
+                            log(">> Syncing identity to VoxTek Cloud...", "var(--warning)");
+                            myDocRef.update({ name: arg })
+                                .then(() => log(`>> Identity confirmed: "${arg}"`, "var(--success)"))
+                                .catch(e => log("Cloud Sync Error: " + e.message, "var(--danger)"));
+                        } else {
+                            log(`>> Local name updated: "${arg}" (Cloud Offline)`, "var(--success)");
+                        }
+                    } else {
+                        log("ERR: Argument required. Usage: setname [NewName]", "var(--danger)");
+                    }
+                    break;
+
+                default:
+                    log(`bash: ${cmd}: command not found`, "var(--danger)");
+            }
+        }
+
+        // Terminal Log Function
+        function log(txt, col="#aaa", isInput=false) {
+            const row = document.createElement('div');
+            row.className = 'term-row';
+            
+            const now = new Date();
+            const timeStr = `[${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}] `;
+            
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'term-time';
+            timeSpan.textContent = timeStr;
+
+            const contentSpan = document.createElement('span');
+            
+            let colorCode = col;
+            if(col.includes('primary')) colorCode = '#00f0ff';
+            if(col.includes('danger')) colorCode = '#ff3333';
+            if(col.includes('success')) colorCode = '#00ff9d';
+            if(col.includes('warning')) colorCode = '#ffcc00';
+            if(col.includes('text-muted')) colorCode = '#8b9bb4';
+
+            contentSpan.style.color = colorCode;
+            contentSpan.textContent = txt; 
+
+            if(isInput) {
+                const promptSpan = document.createElement('span');
+                promptSpan.style.color = '#00ff9d';
+                promptSpan.textContent = 'root@cyberchronos:~# ';
+                row.appendChild(timeSpan);
+                row.appendChild(promptSpan);
+                row.appendChild(contentSpan);
+            } else {
+                row.appendChild(timeSpan);
+                row.appendChild(contentSpan);
+            }
+            termOut.appendChild(row);
+        }
+
+        function scrollToBottom() {
+            termBox.scrollTop = termBox.scrollHeight;
+        }
+
+        // Keyboard Logic
+        cmdIn.addEventListener('keydown', (e) => {
+            // Ctrl+L
+            if (e.ctrlKey && e.key === 'l') { e.preventDefault(); termOut.textContent = ''; return; }
+            // Ctrl+C
+            if (e.ctrlKey && e.key === 'c') {
+                e.preventDefault();
+                killProcess();
+                const row = document.createElement('div');
+                row.className = 'term-row';
+                row.innerHTML = `<span style="color:var(--success)">root@cyberchronos:~#</span>`;
+                termOut.appendChild(row);
+                scrollToBottom();
+                return;
+            }
+            // Enter
+            if (e.key === 'Enter') {
+                const raw = cmdIn.value;
+                if(!raw.trim()) return;
+                cmdHistory.push(raw);
+                historyIndex = cmdHistory.length;
+                log(raw, '#fff', true); 
+                processCommand(raw.trim());
+                cmdIn.value = '';
+                scrollToBottom();
+            } 
+            // Arrows
+            else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (historyIndex > 0) { historyIndex--; cmdIn.value = cmdHistory[historyIndex]; }
+            }
+            else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (historyIndex < cmdHistory.length - 1) { historyIndex++; cmdIn.value = cmdHistory[historyIndex]; }
+                else { historyIndex = cmdHistory.length; cmdIn.value = ''; }
+            }
+            // Tab
+            else if (e.key === 'Tab') {
+                e.preventDefault();
+                const current = cmdIn.value.toLowerCase();
+                const match = availableCommands.find(c => c.startsWith(current));
+                if(match) cmdIn.value = match;
+            }
+        });
+
+        // Initialize All Systems
+        detectSys();
+        initBattery();
+        initVis();
+        
+        // Focus on click
+        document.addEventListener('click', () => {
+            if(document.getElementById('term').classList.contains('active')) {
+                cmdIn.focus();
+            }
+        });
+
+    </script>
 </body>
 </html>
