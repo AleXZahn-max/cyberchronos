@@ -4,7 +4,7 @@
 ![Build](https://img.shields.io/badge/Build-Stable-success?style=for-the-badge)
 ![Author](https://img.shields.io/badge/Author-AleXZahn-blueviolet?style=for-the-badge)
 
-> **"The future isn't coming. It's already here."** — Vox.
+> **"Trust Us with you NETWORK."** — Vox.
 
 ## 📄 About The Project
 **CyberChronos OS** is a conceptual operating system designed for the next generation of digital integration. Developed under the banner of **VoxTek Enterprises**, this project showcases a web-based landing page for an OS that prioritizes speed, aesthetics, and total media control.
