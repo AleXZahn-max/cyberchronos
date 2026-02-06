@@ -40,13 +40,6 @@ Since this is a web presentation layer:
 3.  **Launch:**
     Open `index.html` in any modern web browser (Chrome, Edge, Firefox).
 
-## 👤 Author
-
-**AleXZahn**
-* **Role:** Lead Developer / Vox's Assistant
-* **Location:** Bielsko-Biala, Poland
-* **Device:** CyberChronos 14 Pro
-
 ## ⚠️ Disclaimer
 This is a fan project based on *Hazbin Hotel*. CyberChronos OS is a fictional operating system. VoxTek Enterprises is a fictional entity. Please do not attempt to sell your soul via the contact form.
 
